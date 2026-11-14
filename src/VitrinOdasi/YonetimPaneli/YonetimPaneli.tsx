@@ -72,7 +72,7 @@ export const YonetimPaneli: React.FC = () => {
     { id: 'ozet', baslik: 'Genel Özet & Raporlar', ikon: BarChart3 },
     { id: 'gel_al_subeleri', baslik: 'Şube & Gel-Al', ikon: MapPin },
     { id: 'musteriler', baslik: 'Müşteri & Yorumlar', ikon: Users },
-    { id: 'sistem_ayarlari', baslik: 'Sistem, Site & Arşiv', ikon: Database },
+    { id: 'sistem_ayarlari', baslik: 'Sistem, Ödeme & Site', ikon: Database },
     { id: 'lezzet_danismani', baslik: 'Lezzet Danışmanı', ikon: Sparkles }
   ];
 
@@ -87,7 +87,7 @@ export const YonetimPaneli: React.FC = () => {
       case 'ozet': return 'Genel Durum, Kasa ve Mali Raporlar';
       case 'gel_al_subeleri': return 'Şube & Gel-Al Yönetim Modülü';
       case 'musteriler': return 'Müşteriler, Cüzdan ve Yorum Yönetimi';
-      case 'sistem_ayarlari': return 'Veritabanı Arşiv, Reklam, Hukuk ve Footer Ayarları';
+      case 'sistem_ayarlari': return 'Ödeme Seçenekleri, Sanal POS, Arşiv, Reklam, Hukuk ve Footer';
       case 'lezzet_danismani': return 'Lezzet Danışmanı Yönetimi';
       default: return 'Patron Masası';
     }

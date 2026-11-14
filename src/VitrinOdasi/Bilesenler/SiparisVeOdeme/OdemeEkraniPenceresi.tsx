@@ -16,6 +16,7 @@ import { misafirProfiliniGetir, misafirProfiliniKaydetVeGuncelle, type MisafirPr
 import { useKuponHesaplayici } from '@/src/MalzemeCekmeceleri/useKuponHesaplayici';
 import { paytrTokenOlustur } from '@/src/MalzemeCekmeceleri/Finans/paytrOdemeServisi';
 import { useCanliPaytrAyarlari } from '@/src/MalzemeCekmeceleri/Finans/paytrAyarServisi';
+import { useCanliOdemeSecenekleri } from '@/src/MalzemeCekmeceleri/Finans/odemeSecenekleriServisi';
 import { PaytrOdemePenceresi } from './PaytrOdemePenceresi';
 
 interface OdemeEkraniPenceresiOzellikleri {
@@ -93,13 +94,41 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
 
   const [adresNotu, setAdresNotu] = useState('');
   const [odemeYontemi, setOdemeYontemi] = useState<OdemeTipi>('kapida_nakit');
+  const [kullaniciSecimYapti, setKullaniciSecimYapti] = useState(false);
   const { ayarlar: paytrAyarlari } = useCanliPaytrAyarlari();
+  const { secenekler: odemeSecenekleri } = useCanliOdemeSecenekleri();
 
   useEffect(() => {
-    if (!paytrAyarlari.onlineOdemeAktif && odemeYontemi === 'online_cuzdan') {
-      setOdemeYontemi('kapida_nakit');
+    const uygunMap: Record<OdemeTipi, boolean> = {
+      kapida_nakit: odemeSecenekleri.kapidaNakitAktif,
+      kapida_kart: odemeSecenekleri.kapidaKartAktif,
+      online_cuzdan: paytrAyarlari.onlineOdemeAktif,
+    };
+
+    if (!kullaniciSecimYapti && uygunMap[odemeSecenekleri.varsayilanYontem]) {
+      setOdemeYontemi(odemeSecenekleri.varsayilanYontem);
+      return;
     }
-  }, [paytrAyarlari.onlineOdemeAktif, odemeYontemi]);
+
+    if (!uygunMap[odemeYontemi]) {
+      if (uygunMap[odemeSecenekleri.varsayilanYontem]) {
+        setOdemeYontemi(odemeSecenekleri.varsayilanYontem);
+      } else if (uygunMap.kapida_nakit) {
+        setOdemeYontemi('kapida_nakit');
+      } else if (uygunMap.kapida_kart) {
+        setOdemeYontemi('kapida_kart');
+      } else if (uygunMap.online_cuzdan) {
+        setOdemeYontemi('online_cuzdan');
+      }
+    }
+  }, [
+    odemeSecenekleri.kapidaNakitAktif,
+    odemeSecenekleri.kapidaKartAktif,
+    odemeSecenekleri.varsayilanYontem,
+    paytrAyarlari.onlineOdemeAktif,
+    odemeYontemi,
+    kullaniciSecimYapti,
+  ]);
 
   const [yukleniyor, setYukleniyor] = useState(false);
   const [olusanSiparisler, setOlusanSiparisler] = useState<TestSiparis[]>([]);
@@ -229,6 +258,11 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
 
     if (!sozlesmeOnaylandi) {
       setHataMesaji('Lütfen Mesafeli Satış Sözleşmesi ve Ön Bilgilendirme Koşullarını onaylayınız.');
+      return;
+    }
+
+    if (!odemeSecenekleri.kapidaNakitAktif && !odemeSecenekleri.kapidaKartAktif && !paytrAyarlari.onlineOdemeAktif) {
+      setHataMesaji('Şu anda aktif ödeme yöntemi bulunmamaktadır.');
       return;
     }
 
@@ -502,7 +536,12 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
               {/* Ödeme Yöntemi Seçimi */}
               <OdemeYontemiKarti
                 seciliYontem={odemeYontemi}
-                onYontemSec={setOdemeYontemi}
+                onYontemSec={(yontem) => {
+                  setKullaniciSecimYapti(true);
+                  setOdemeYontemi(yontem);
+                }}
+                kapidaNakitAktif={odemeSecenekleri.kapidaNakitAktif}
+                kapidaKartAktif={odemeSecenekleri.kapidaKartAktif}
                 onlineOdemeAktif={paytrAyarlari.onlineOdemeAktif}
               />
 
