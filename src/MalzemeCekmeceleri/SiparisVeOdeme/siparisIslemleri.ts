@@ -21,6 +21,8 @@ export interface YeniSiparisGirdisi {
   kuponKodu?: string;
   kuponIndirimTutari?: number;
   odemeYontemi: 'kapida_nakit' | 'kapida_kart' | 'online_cuzdan';
+  odemeDurumu?: 'odendi' | 'kapida_odenecek' | 'beklemede';
+  paytrOid?: string;
   tahminiTeslimat?: string;
   adresNotu?: string;
 }
@@ -75,6 +77,8 @@ export async function veritabaninaSiparisOlustur(
     platform_bedeli: komisyonDetaylari.platformBedeli,
     net_hakedis: komisyonDetaylari.netHakedis,
     odeme_yontemi: girdi.odemeYontemi,
+    odeme_durumu: girdi.odemeDurumu || (girdi.odemeYontemi === 'online_cuzdan' ? 'beklemede' : 'kapida_odenecek'),
+    ...(girdi.paytrOid ? { paytr_oid: girdi.paytrOid } : {}),
     olusturma_tarihi: new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
     tahmini_teslimat: girdi.tahminiTeslimat || '40-50 dk'
   };

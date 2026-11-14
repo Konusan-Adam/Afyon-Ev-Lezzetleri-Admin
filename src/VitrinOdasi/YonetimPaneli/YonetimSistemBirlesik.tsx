@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Database, ShieldCheck, LayoutTemplate, Megaphone } from 'lucide-react';
+import { Database, ShieldCheck, LayoutTemplate, Megaphone, CreditCard } from 'lucide-react';
 import { YonetimYedeklemeMerkezi } from './YonetimYedeklemeMerkezi';
 import { SuperAdminHukukPaneli } from '../Bilesenler/HukukVeSozlesmeler/SuperAdminHukukPaneli';
 import { YonetimFooter } from './YonetimFooter';
 import { YonetimReklamBanner } from './YonetimReklamBanner';
+import { YonetimPaytrAyarlari } from './YonetimPaytrAyarlari';
 
 export const YonetimSistemBirlesik: React.FC = () => {
-  const [sekme, setSekme] = useState<'yedek' | 'reklam' | 'hukuk' | 'footer'>('yedek');
+  const [sekme, setSekme] = useState<'yedek' | 'paytr' | 'reklam' | 'hukuk' | 'footer'>('yedek');
 
   return (
     <div className="space-y-4">
@@ -14,6 +15,10 @@ export const YonetimSistemBirlesik: React.FC = () => {
         <button type="button" onClick={() => setSekme('yedek')}
           className={`px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer ${sekme === 'yedek' ? 'bg-amber-500 text-purple-950 font-black' : 'text-gray-400 hover:text-white'}`}>
           <Database className="w-3.5 h-3.5" /><span>Veritabanı & Arşiv</span>
+        </button>
+        <button type="button" onClick={() => setSekme('paytr')}
+          className={`px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer ${sekme === 'paytr' ? 'bg-amber-500 text-purple-950 font-black' : 'text-gray-400 hover:text-white'}`}>
+          <CreditCard className="w-3.5 h-3.5" /><span>Sanal POS (PayTR)</span>
         </button>
         <button type="button" onClick={() => setSekme('reklam')}
           className={`px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer ${sekme === 'reklam' ? 'bg-amber-500 text-purple-950 font-black' : 'text-gray-400 hover:text-white'}`}>
@@ -29,6 +34,7 @@ export const YonetimSistemBirlesik: React.FC = () => {
         </button>
       </div>
       {sekme === 'yedek' && <YonetimYedeklemeMerkezi />}
+      {sekme === 'paytr' && <YonetimPaytrAyarlari />}
       {sekme === 'reklam' && <YonetimReklamBanner />}
       {sekme === 'hukuk' && <SuperAdminHukukPaneli />}
       {sekme === 'footer' && <YonetimFooter />}

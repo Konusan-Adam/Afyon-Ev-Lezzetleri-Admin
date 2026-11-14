@@ -6,11 +6,13 @@ export type OdemeTipi = 'kapida_nakit' | 'kapida_kart' | 'online_cuzdan';
 interface OdemeYontemiKartiOzellikleri {
   seciliYontem: OdemeTipi;
   onYontemSec: (yontem: OdemeTipi) => void;
+  onlineOdemeAktif?: boolean;
 }
 
 export const OdemeYontemiKarti: React.FC<OdemeYontemiKartiOzellikleri> = ({
   seciliYontem,
   onYontemSec,
+  onlineOdemeAktif = true,
 }) => {
   return (
     <div className="bg-[#240C28] border border-[#521E5C] rounded-2xl p-4 space-y-3">
@@ -68,29 +70,31 @@ export const OdemeYontemiKarti: React.FC<OdemeYontemiKartiOzellikleri> = ({
           />
         </label>
 
-        <label
-          onClick={() => onYontemSec('online_cuzdan')}
-          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-            seciliYontem === 'online_cuzdan'
-              ? 'bg-[#3A1440] border-[#CFA353] text-white shadow-sm'
-              : 'bg-[#1A081D] border-[#3E1646] text-gray-300 hover:border-[#521E5C]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-4 h-4 text-amber-400" />
-            <div className="text-xs">
-              <p className="font-bold">Online Kredi Kartı / Cüzdan</p>
-              <p className="text-[10px] text-gray-400">3D Güvenli ve anında temassız ödeme</p>
+        {onlineOdemeAktif && (
+          <label
+            onClick={() => onYontemSec('online_cuzdan')}
+            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+              seciliYontem === 'online_cuzdan'
+                ? 'bg-[#3A1440] border-[#CFA353] text-white shadow-sm'
+                : 'bg-[#1A081D] border-[#3E1646] text-gray-300 hover:border-[#521E5C]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <div className="text-xs">
+                <p className="font-bold">Online Kredi Kartı / Cüzdan</p>
+                <p className="text-[10px] text-gray-400">3D Güvenli ve anında temassız ödeme</p>
+              </div>
             </div>
-          </div>
-          <input
-            type="radio"
-            name="odeme_yontemi"
-            checked={seciliYontem === 'online_cuzdan'}
-            onChange={() => onYontemSec('online_cuzdan')}
-            className="accent-[#CFA353]"
-          />
-        </label>
+            <input
+              type="radio"
+              name="odeme_yontemi"
+              checked={seciliYontem === 'online_cuzdan'}
+              onChange={() => onYontemSec('online_cuzdan')}
+              className="accent-[#CFA353]"
+            />
+          </label>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { tcknVknGecerliMi } from '@/src/MalzemeCekmeceleri/Finans/ibanVeKimlikDogrulama';
-import { FaturaKaydi, FaturaTipi, belgeNoUret } from './faturaVeritabani';
+import { FaturaKaydi, FaturaTipi, FATURA_TIP_META, belgeNoUret } from './faturaVeritabani';
 import { FaturaFormGirdileri, FaturaFormVeri } from './FaturaFormGirdileri';
 
 interface ModalProps {
@@ -11,10 +11,42 @@ interface ModalProps {
 }
 
 const VARSAYILAN_SABLON: Record<FaturaTipi, Partial<FaturaFormVeri>> = {
-  gider_pusulasi: { kesen_unvan: 'Ev Mutfağı İş Ortağı', alan_unvan: 'Afyon Ev Lezzetleri A.Ş.', alan_vergi_no: '0123456789', kdv_orani: '0', stopaj_orani: '0', aciklama: 'Esnaf muafiyetli ev mutfağı ürün alım belgesi' },
-  earSiv_fatura: { kesen_unvan: 'Afyon Ev Lezzetleri A.Ş.', kesen_vergi_no: '0123456789', alan_unvan: 'Perakende Müşteri', alan_vergi_no: '', kdv_orani: '10', stopaj_orani: '0', aciklama: 'Hazır ev yemeği satış E-Arşiv faturası' },
-  komisyon_faturasi: { kesen_unvan: 'Afyon Ev Lezzetleri A.Ş.', kesen_vergi_no: '0123456789', alan_unvan: 'Ticari Mutfak Şubesi', alan_vergi_no: '', kdv_orani: '20', stopaj_orani: '0', aciklama: 'Platform aracılık ve hizmet komisyon faturası' },
-  kurye_makbuz: { kesen_unvan: 'Taşıyıcı Kurye', alan_unvan: 'Afyon Ev Lezzetleri A.Ş.', alan_vergi_no: '0123456789', kdv_orani: '0', stopaj_orani: '0', aciklama: 'Kurye teslimat ve sefer primi gider pusulası' }
+  gider_pusulasi: {
+    kesen_unvan: 'Afyon Ev Lezzetleri A.Ş.', kesen_vergi_no: '0123456789',
+    alan_unvan: 'Ev Aşçısı İş Ortağı', alan_vergi_no: '',
+    teslimat_tutari: '0', kdv_orani: '0', stopaj_orani: '2',
+    aciklama: 'Ev aşçısından ürün alımı Gider Pusulası (%2 Stopaj)'
+  },
+  earSiv_fatura: {
+    kesen_unvan: 'Afyon Ev Lezzetleri A.Ş.', kesen_vergi_no: '0123456789',
+    alan_unvan: 'Perakende Müşteri', alan_vergi_no: '',
+    teslimat_tutari: '30', kdv_orani: '10', stopaj_orani: '0',
+    aciklama: 'Sipariş E-Arşiv Satış Faturası (Yemek %10 + Teslimat %20 KDV)'
+  },
+  komisyon_faturasi: {
+    kesen_unvan: 'Afyon Ev Lezzetleri A.Ş.', kesen_vergi_no: '0123456789',
+    alan_unvan: 'Ticari Mutfak İşletmesi', alan_vergi_no: '',
+    teslimat_tutari: '0', kdv_orani: '20', stopaj_orani: '0',
+    aciklama: 'Pazaryeri ticari mutfak komisyon faturası (%20 KDV)'
+  },
+  kurye_makbuz: {
+    kesen_unvan: 'Esnaf Kurye', kesen_vergi_no: '',
+    alan_unvan: 'Afyon Ev Lezzetleri A.Ş.', alan_vergi_no: '0123456789',
+    teslimat_tutari: '0', kdv_orani: '20', stopaj_orani: '0',
+    aciklama: 'Esnaf kurye haftalık/aylık hakediş gider faturası (%20 KDV)'
+  },
+  sanal_pos_faturasi: {
+    kesen_unvan: 'PayTR / İyzico Ödeme Kuruluşu', kesen_vergi_no: '',
+    alan_unvan: 'Afyon Ev Lezzetleri A.Ş.', alan_vergi_no: '0123456789',
+    teslimat_tutari: '0', kdv_orani: '20', stopaj_orani: '0',
+    aciklama: 'Ay sonu Sanal POS komisyon kesinti gider faturası (%20 KDV)'
+  },
+  iade_iptal: {
+    kesen_unvan: 'Müşteri / Karşı Taraf', kesen_vergi_no: '',
+    alan_unvan: 'Afyon Ev Lezzetleri A.Ş.', alan_vergi_no: '0123456789',
+    teslimat_tutari: '0', kdv_orani: '10', stopaj_orani: '0',
+    aciklama: 'Sipariş iptali / ürün iadesi düzeltme belgesi'
+  }
 };
 
 export const FaturaFormModali: React.FC<ModalProps> = ({ duzenlenen, onKaydet, onKapat }) => {
@@ -31,6 +63,7 @@ export const FaturaFormModali: React.FC<ModalProps> = ({ duzenlenen, onKaydet, o
     alan_vergi_no: duzenlenen.alan_vergi_no || '',
     vergi_dairesi: duzenlenen.vergi_dairesi || 'Afyonkarahisar Tınaztepe V.D.',
     tutar: String(duzenlenen.tutar),
+    teslimat_tutari: String(duzenlenen.teslimat_tutari || 0),
     kdv_orani: String(duzenlenen.kdv_orani),
     stopaj_orani: String(duzenlenen.stopaj_orani || 0),
     aciklama: duzenlenen.aciklama
@@ -39,21 +72,30 @@ export const FaturaFormModali: React.FC<ModalProps> = ({ duzenlenen, onKaydet, o
     tip: 'gider_pusulasi',
     tarih: new Date().toISOString().split('T')[0],
     durum: 'onaylandi',
-    kesen_unvan: 'Ev Mutfağı İş Ortağı',
-    kesen_vergi_no: '',
-    alan_unvan: 'Afyon Ev Lezzetleri A.Ş.',
-    alan_vergi_no: '0123456789',
+    kesen_unvan: 'Afyon Ev Lezzetleri A.Ş.',
+    kesen_vergi_no: '0123456789',
+    alan_unvan: 'Ev Aşçısı İş Ortağı',
+    alan_vergi_no: '',
     vergi_dairesi: 'Afyonkarahisar Tınaztepe V.D.',
     tutar: '1250',
+    teslimat_tutari: '0',
     kdv_orani: '0',
-    stopaj_orani: '0',
-    aciklama: 'Esnaf muafiyetli ev mutfağı ürün alım belgesi'
+    stopaj_orani: '2',
+    aciklama: 'Ev aşçısından ürün alımı Gider Pusulası (%2 Stopaj)'
   });
 
   const brut = parseFloat(form.tutar) || 0;
-  const kdvOran = parseFloat(form.kdv_orani) || 0;
+  const teslimatPay = form.tip === 'earSiv_fatura'
+    ? Math.min(brut, Math.max(0, parseFloat(form.teslimat_tutari) || 0))
+    : 0;
+  const yemekPay = Number((brut - teslimatPay).toFixed(2));
+  const yemekKdv = form.tip === 'earSiv_fatura' ? Number(((yemekPay * 10) / 110).toFixed(2)) : 0;
+  const teslimatKdv = form.tip === 'earSiv_fatura' ? Number(((teslimatPay * 20) / 120).toFixed(2)) : 0;
+  const kdvOran = form.tip === 'earSiv_fatura' ? 10 : (parseFloat(form.kdv_orani) || 0);
+  const kdvTutar = form.tip === 'earSiv_fatura'
+    ? Number((yemekKdv + teslimatKdv).toFixed(2))
+    : Number(((brut * kdvOran) / (100 + kdvOran)).toFixed(2));
   const stopajOran = parseFloat(form.stopaj_orani) || 0;
-  const kdvTutar = Number(((brut * kdvOran) / (100 + kdvOran)).toFixed(2));
   const matrah = Number((brut - kdvTutar).toFixed(2));
   const stopajTutar = Number(((matrah * stopajOran) / 100).toFixed(2));
   const net = Number((matrah - stopajTutar).toFixed(2));
@@ -69,6 +111,7 @@ export const FaturaFormModali: React.FC<ModalProps> = ({ duzenlenen, onKaydet, o
       id: duzenlenen?.id || `fat-${Date.now()}`,
       fatura_no: form.fatura_no.trim(),
       tip: form.tip,
+      yon: FATURA_TIP_META[form.tip].yon,
       tarih: form.tarih,
       durum: form.durum,
       kesen_unvan: form.kesen_unvan.trim(),
@@ -77,6 +120,12 @@ export const FaturaFormModali: React.FC<ModalProps> = ({ duzenlenen, onKaydet, o
       alan_vergi_no: form.alan_vergi_no.trim(),
       vergi_dairesi: form.vergi_dairesi.trim(),
       tutar: brut,
+      ...(form.tip === 'earSiv_fatura' ? {
+        yemek_tutari: yemekPay,
+        yemek_kdv_tutari: yemekKdv,
+        teslimat_tutari: teslimatPay,
+        teslimat_kdv_tutari: teslimatKdv
+      } : {}),
       kdv_orani: kdvOran,
       kdv_tutari: kdvTutar,
       stopaj_orani: stopajOran,
@@ -93,14 +142,16 @@ export const FaturaFormModali: React.FC<ModalProps> = ({ duzenlenen, onKaydet, o
       <div className="bg-[#180A1F] border border-amber-500/50 rounded-3xl w-full max-w-xl p-6 space-y-4 shadow-2xl text-xs max-h-[92vh] overflow-y-auto">
         <h3 className="text-base font-bold text-white flex items-center gap-2">
           <FileText className="w-5 h-5 text-amber-400" />
-          <span>{duzenlenen ? `Belge Düzenle (${duzenlenen.fatura_no})` : 'Yeni Fatura / Gider Pusulası Kes'}</span>
+          <span>{duzenlenen ? `Belge Düzenle (${duzenlenen.fatura_no})` : 'Yeni Muhasebe Belgesi Kes'}</span>
         </h3>
         <form onSubmit={gonder} className="space-y-4">
           <FaturaFormGirdileri form={form} guncelle={(a, d) => setForm(p => ({ ...p, [a]: d }))}
             tipDegistir={(yeniTip) => setForm(p => duzenlenen ? { ...p, tip: yeniTip } : { ...p, tip: yeniTip, fatura_no: belgeNoUret(yeniTip), ...VARSAYILAN_SABLON[yeniTip] })} />
           <div className="p-3 rounded-xl bg-[#120614] border border-purple-900/70 flex flex-wrap justify-between gap-2 text-[11px] text-gray-300">
             <span>Net/Matrah: <strong className="text-white">{net.toLocaleString('tr-TR')} ₺</strong></span>
-            <span>KDV: <strong className="text-amber-300">{kdvTutar.toLocaleString('tr-TR')} ₺</strong></span>
+            <span>KDV: <strong className="text-amber-300">{kdvTutar.toLocaleString('tr-TR')} ₺</strong>
+              {form.tip === 'earSiv_fatura' && ` (Yemek: ${yemekKdv} + Teslimat: ${teslimatKdv})`}
+            </span>
             <span>Stopaj: <strong className="text-rose-300">{stopajTutar.toLocaleString('tr-TR')} ₺</strong></span>
             <span>Genel Toplam: <strong className="text-emerald-400">{brut.toLocaleString('tr-TR')} ₺</strong></span>
           </div>

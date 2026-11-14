@@ -12,6 +12,7 @@ export interface FaturaFormVeri {
   alan_vergi_no: string;
   vergi_dairesi: string;
   tutar: string;
+  teslimat_tutari: string;
   kdv_orani: string;
   stopaj_orani: string;
   aciklama: string;
@@ -32,10 +33,12 @@ export const FaturaFormGirdileri: React.FC<GirdiProps> = ({ form, guncelle, tipD
       <div className="col-span-2">
         <label className="text-gray-400 block mb-1">Belge Tipi</label>
         <select value={form.tip} onChange={e => tipDegistir(e.target.value as FaturaTipi)} className={girdiSinif}>
-          <option value="gider_pusulasi">Gider Pusulası (Ev Mutfak)</option>
-          <option value="earSiv_fatura">E-Arşiv Fatura (Ticari)</option>
-          <option value="komisyon_faturasi">Komisyon Faturası</option>
-          <option value="kurye_makbuz">Kurye Gider Pusulası</option>
+          <option value="gider_pusulasi">Gider Pusulası (Sen → Ev Aşçısı, %2 Stopaj)</option>
+          <option value="earSiv_fatura">E-Arşiv Satış Faturası (Sen → Müşteri, %10/%20)</option>
+          <option value="komisyon_faturasi">Komisyon Faturası (Sen → Ticari Mutfak, %20)</option>
+          <option value="kurye_makbuz">Esnaf Kurye Faturası (Kurye → Sana, %20 Gider)</option>
+          <option value="sanal_pos_faturasi">Sanal POS Faturası (Ödeme Kur. → Sana, %20 Gider)</option>
+          <option value="iade_iptal">İade / İptal Belgesi (Karşılıklı)</option>
         </select>
       </div>
       <div>
@@ -69,25 +72,32 @@ export const FaturaFormGirdileri: React.FC<GirdiProps> = ({ form, guncelle, tipD
 
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
       <div>
-        <label className="text-gray-400 block mb-1">Brüt Tutar (₺)</label>
+        <label className="text-gray-400 block mb-1">Genel Tutar (₺)</label>
         <input type="number" step="0.01" min="0" required value={form.tutar} onChange={e => guncelle('tutar', e.target.value)} className={`${girdiSinif} font-bold`} />
       </div>
-      <div>
-        <label className="text-gray-400 block mb-1">KDV (%)</label>
-        <select value={form.kdv_orani} onChange={e => guncelle('kdv_orani', e.target.value)} className={girdiSinif}>
-          <option value="0">%0 (Muaf)</option>
-          <option value="1">%1 (Temel Gıda)</option>
-          <option value="10">%10 (Yemek)</option>
-          <option value="20">%20 (Hizmet)</option>
-        </select>
-      </div>
+      {form.tip === 'earSiv_fatura' ? (
+        <div>
+          <label className="text-gray-400 block mb-1">Teslimat Payı (%20 KDV, ₺)</label>
+          <input type="number" step="0.01" min="0" value={form.teslimat_tutari} onChange={e => guncelle('teslimat_tutari', e.target.value)} className={girdiSinif} />
+        </div>
+      ) : (
+        <div>
+          <label className="text-gray-400 block mb-1">KDV (%)</label>
+          <select value={form.kdv_orani} onChange={e => guncelle('kdv_orani', e.target.value)} className={girdiSinif}>
+            <option value="0">%0 (Muaf)</option>
+            <option value="1">%1 (Temel Gıda)</option>
+            <option value="10">%10 (Yemek)</option>
+            <option value="20">%20 (Hizmet / Gider)</option>
+          </select>
+        </div>
+      )}
       <div>
         <label className="text-gray-400 block mb-1">Stopaj (%)</label>
         <select value={form.stopaj_orani} onChange={e => guncelle('stopaj_orani', e.target.value)} className={girdiSinif}>
-          <option value="0">%0 (GVK 9/10)</option>
-          <option value="2">%2 (Tarım/Esnaf)</option>
+          <option value="0">%0 (Yok / Muaf)</option>
+          <option value="2">%2 (Ev Emeği / Mal Alım)</option>
+          <option value="5">%5 (Esnaf Hizmet)</option>
           <option value="10">%10 (Hizmet)</option>
-          <option value="20">%20 (Serbest Meslek)</option>
         </select>
       </div>
       <div>

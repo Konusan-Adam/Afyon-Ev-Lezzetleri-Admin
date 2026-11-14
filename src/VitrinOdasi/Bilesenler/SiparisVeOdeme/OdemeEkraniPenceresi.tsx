@@ -14,6 +14,9 @@ import { telefonGecerliMi, telefonuStandartlastir } from '@/src/MalzemeCekmecele
 import { hukukiLogKaydet } from '@/src/MalzemeCekmeceleri';
 import { misafirProfiliniGetir, misafirProfiliniKaydetVeGuncelle, type MisafirProfili } from '@/src/MalzemeCekmeceleri/misafirIslemleri';
 import { useKuponHesaplayici } from '@/src/MalzemeCekmeceleri/useKuponHesaplayici';
+import { paytrTokenOlustur } from '@/src/MalzemeCekmeceleri/Finans/paytrOdemeServisi';
+import { useCanliPaytrAyarlari } from '@/src/MalzemeCekmeceleri/Finans/paytrAyarServisi';
+import { PaytrOdemePenceresi } from './PaytrOdemePenceresi';
 
 interface OdemeEkraniPenceresiOzellikleri {
   grup?: MutfakSepetGrubu;
@@ -90,9 +93,24 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
 
   const [adresNotu, setAdresNotu] = useState('');
   const [odemeYontemi, setOdemeYontemi] = useState<OdemeTipi>('kapida_nakit');
+  const { ayarlar: paytrAyarlari } = useCanliPaytrAyarlari();
+
+  useEffect(() => {
+    if (!paytrAyarlari.onlineOdemeAktif && odemeYontemi === 'online_cuzdan') {
+      setOdemeYontemi('kapida_nakit');
+    }
+  }, [paytrAyarlari.onlineOdemeAktif, odemeYontemi]);
+
   const [yukleniyor, setYukleniyor] = useState(false);
   const [olusanSiparisler, setOlusanSiparisler] = useState<TestSiparis[]>([]);
   const [taninanMisafir, setTaninanMisafir] = useState<MisafirProfili | null>(null);
+  const [paytrOturum, setPaytrOturum] = useState<{
+    merchantOid: string;
+    iframeUrl?: string;
+    demoMod?: boolean;
+    tutar: number;
+    adresMetni: string;
+  } | null>(null);
 
   // 🎫 Akıllı Kupon Hesaplayıcı ve İndirim Denetçisi
   const toplamSepetTutari = aktifGruplar.reduce((acc, g) => acc + g.araToplam, 0);
@@ -230,8 +248,54 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
       adresMetni = `${seciliMahalle}, ${acikAdres.trim()} ${binaDaireNo.trim() ? `(${binaDaireNo.trim()})` : ''} - Afyonkarahisar`;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 350));
+    if (odemeYontemi === 'online_cuzdan') {
+      const sepetSatirlari = aktifGruplar.flatMap((g) =>
+        g.elemanlar.map((e: any) => ({
+          ad: e.yemek?.baslik || e.baslik || 'Ev Yemeği',
+          fiyat: Number(e.birim_fiyat || e.fiyat || 0),
+          adet: Number(e.adet || 1)
+        }))
+      );
+      const araToplamVeTeslimat = aktifGruplar.reduce(
+        (acc, g) => acc + g.araToplam + (gelAlMi ? 0 : g.teslimatUcreti),
+        0
+      );
+      const netOdenecek = Math.max(
+        1,
+        Math.round((araToplamVeTeslimat - (kuponBilgisi?.gecerli ? kuponBilgisi.indirimTutari : 0)) * 100) / 100
+      );
+      const tokenSonucu = await paytrTokenOlustur({
+        tutar: netOdenecek,
+        musteriAdi: musteriIsmi,
+        musteriTelefon: telefonuStandartlastir(musteriTel),
+        adres: adresMetni,
+        eposta: (aktifKullanici as any)?.eposta,
+        elemanlar: sepetSatirlari,
+        ayarlar: paytrAyarlari
+      });
+      setYukleniyor(false);
+      if (!tokenSonucu.basarili || !tokenSonucu.merchantOid || (!tokenSonucu.iframeUrl && !tokenSonucu.demoMod)) {
+        setHataMesaji(tokenSonucu.mesaj || 'PayTR ödeme oturumu başlatılamadı.');
+        return;
+      }
+      setPaytrOturum({
+        merchantOid: tokenSonucu.merchantOid,
+        iframeUrl: tokenSonucu.iframeUrl,
+        demoMod: tokenSonucu.demoMod,
+        tutar: netOdenecek,
+        adresMetni
+      });
+      return;
+    }
 
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await siparisleriVeritabaninaYaz(adresMetni);
+  };
+
+  const siparisleriVeritabaninaYaz = async (adresMetni: string, paytrOid?: string) => {
+    setYukleniyor(true);
+    const musteriIsmi = aktifKullanici ? aktifKullanici.ad_soyad : adSoyad.trim();
+    const musteriTel = aktifKullanici ? (aktifKullanici.telefon || '0542 333 44 55') : telefon.trim();
     const yeniOlusanlar: TestSiparis[] = [];
     const toplamKuponIndirimi = kuponBilgisi?.gecerli ? kuponBilgisi.indirimTutari : 0;
     let kalanIndirim = toplamKuponIndirimi;
@@ -267,6 +331,8 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
         kuponKodu: buGrupIndirimi > 0 ? (kuponBilgisi?.kod || '') : undefined,
         kuponIndirimTutari: buGrupIndirimi,
         odemeYontemi,
+        odemeDurumu: paytrOid ? 'odendi' : undefined,
+        paytrOid,
         tahminiTeslimat:
           tercih.tip === 'hemen'
             ? gelAlMi
@@ -437,6 +503,7 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
               <OdemeYontemiKarti
                 seciliYontem={odemeYontemi}
                 onYontemSec={setOdemeYontemi}
+                onlineOdemeAktif={paytrAyarlari.onlineOdemeAktif}
               />
 
               {/* Sipariş Özeti ve Onay Kilidi */}
@@ -459,6 +526,24 @@ export const OdemeEkraniPenceresi: React.FC<OdemeEkraniPenceresiOzellikleri> = (
           )}
         </div>
       </div>
+
+      {paytrOturum && (
+        <PaytrOdemePenceresi
+          merchantOid={paytrOturum.merchantOid}
+          iframeUrl={paytrOturum.iframeUrl}
+          demoMod={paytrOturum.demoMod}
+          tutar={paytrOturum.tutar}
+          onOdemeBasarili={async (oid) => {
+            const adres = paytrOturum.adresMetni;
+            setPaytrOturum(null);
+            await siparisleriVeritabaninaYaz(adres, oid);
+          }}
+          onIptal={(mesaj) => {
+            setPaytrOturum(null);
+            if (mesaj) setHataMesaji(mesaj);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -24,6 +24,8 @@ export const YEDEKLENECEK_KOLEKSIYONLAR = [
   'komisyon_ayarlari',
   'kampanyalar',
   'genel_ayarlar',
+  'reklam_ayarlari',
+  'sistem_ayarlari',
   'hukuki_onay_loglari',
   'sozlesmeler'
 ] as const;

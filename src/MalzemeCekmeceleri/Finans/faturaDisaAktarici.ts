@@ -1,10 +1,11 @@
-import { FaturaKaydi } from './faturaServisi';
+import { FaturaKaydi, FATURA_TIP_META, faturaYonuGetir } from './faturaServisi';
 
 export function faturalariCsvIndir(faturalar: FaturaKaydi[]) {
   const basliklar = [
     'Belge No',
     'Tarih',
     'Belge Tipi',
+    'Yon',
     'Durum',
     'Kesen Unvan',
     'Kesen VKN/TCKN',
@@ -14,6 +15,8 @@ export function faturalariCsvIndir(faturalar: FaturaKaydi[]) {
     'Matrah (TL)',
     'KDV Oran (%)',
     'KDV Tutari (TL)',
+    'Yemek KDV %10 (TL)',
+    'Teslimat KDV %20 (TL)',
     'Stopaj (%)',
     'Stopaj (TL)',
     'Genel Toplam (TL)',
@@ -24,7 +27,8 @@ export function faturalariCsvIndir(faturalar: FaturaKaydi[]) {
   const satirlar = faturalar.map((f) => [
     f.fatura_no,
     f.tarih,
-    f.tip,
+    FATURA_TIP_META[f.tip]?.ad || f.tip,
+    faturaYonuGetir(f).toUpperCase(),
     f.durum,
     f.kesen_unvan.replace(/;/g, ' '),
     f.kesen_vergi_no || '',
@@ -34,6 +38,8 @@ export function faturalariCsvIndir(faturalar: FaturaKaydi[]) {
     f.net_tutar.toFixed(2).replace('.', ','),
     f.kdv_orani,
     f.kdv_tutari.toFixed(2).replace('.', ','),
+    (f.yemek_kdv_tutari || 0).toFixed(2).replace('.', ','),
+    (f.teslimat_kdv_tutari || 0).toFixed(2).replace('.', ','),
     f.stopaj_orani || 0,
     (f.stopaj_tutari || 0).toFixed(2).replace('.', ','),
     f.tutar.toFixed(2).replace('.', ','),

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Printer, Edit3, Ban, Trash2 } from 'lucide-react';
-import { FaturaKaydi } from './faturaVeritabani';
+import { FaturaKaydi, FATURA_TIP_META, faturaYonuGetir } from './faturaVeritabani';
 
 interface SatirProps {
   fatura: FaturaKaydi;
@@ -16,6 +16,8 @@ export const FaturaSatirKarti: React.FC<SatirProps> = ({
   const [silmeOnay, setSilmeOnay] = useState(false);
   const [iptalOnay, setIptalOnay] = useState(false);
   const iptalMi = fatura.durum === 'iptal';
+  const yon = faturaYonuGetir(fatura);
+  const tipAdi = FATURA_TIP_META[fatura.tip]?.ad || fatura.tip.replace('_', ' ');
 
   return (
     <div className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs ${
@@ -28,8 +30,15 @@ export const FaturaSatirKarti: React.FC<SatirProps> = ({
           }`}>
             {fatura.fatura_no}
           </span>
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-950 text-purple-200 border border-purple-800">
-            {fatura.tip.replace('_', ' ')}
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950 text-purple-200 border border-purple-800">
+            {tipAdi}
+          </span>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+            yon === 'gider' ? 'bg-blue-950 text-blue-300 border border-blue-800/50'
+              : yon === 'iade' ? 'bg-amber-950 text-amber-300 border border-amber-800/50'
+              : 'bg-emerald-950 text-emerald-300 border border-emerald-800/50'
+          }`}>
+            {yon === 'gider' ? 'Gider' : yon === 'iade' ? 'İade' : 'Gelir'}
           </span>
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
             iptalMi ? 'bg-rose-950 text-rose-300' : fatura.durum === 'beklemede' ? 'bg-amber-950 text-amber-300' : 'bg-emerald-950 text-emerald-300'
@@ -56,7 +65,9 @@ export const FaturaSatirKarti: React.FC<SatirProps> = ({
             {fatura.tutar.toLocaleString('tr-TR')} ₺
           </div>
           <div className="text-[10px] text-gray-400">
-            KDV: {fatura.kdv_tutari.toLocaleString('tr-TR')} ₺ (%{fatura.kdv_orani})
+            {(fatura.teslimat_tutari || 0) > 0
+              ? `KDV: ${fatura.kdv_tutari.toLocaleString('tr-TR')} ₺ (Y:%10 + T:%20)`
+              : `KDV: ${fatura.kdv_tutari.toLocaleString('tr-TR')} ₺ (%${fatura.kdv_orani})`}
             {(fatura.stopaj_tutari || 0) > 0 && ` • Stopaj: ${fatura.stopaj_tutari} ₺`}
           </div>
         </div>

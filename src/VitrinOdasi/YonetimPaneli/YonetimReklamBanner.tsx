@@ -8,6 +8,7 @@ import { KareReklamAyarKarti } from './ReklamYonetimi/KareReklamAyarKarti';
 import { KuponAyarKarti } from './ReklamYonetimi/KuponAyarKarti';
 import { MobilKampanyaAyarKarti } from './ReklamYonetimi/MobilKampanyaAyarKarti';
 import { useKampanyalar } from '@/src/MalzemeCekmeceleri/KampanyaCekmecesi';
+import { belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 
 export const YonetimReklamBanner: React.FC = () => {
   const { ayarlar: canliAyarlar, reklamAyarlariniGuncelle } = useCanliReklamAyarlari();
@@ -28,6 +29,7 @@ export const YonetimReklamBanner: React.FC = () => {
 
     const basarili1 = await reklamAyarlariniGuncelle(ayarlar);
     const basarili2 = await kampanyalariKaydet(mobilKampanyalar);
+    belgeSil('genel_ayarlar', 'reklam_ayarlari').catch(() => {});
 
     setKaydediliyor(false);
     if (basarili1 && basarili2) {

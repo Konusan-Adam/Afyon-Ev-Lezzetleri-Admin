@@ -3,13 +3,15 @@ import { ShoppingBag, Clock, CheckCircle2, Bike, AlertCircle, RefreshCw, XCircle
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonuCanliDinle, koleksiyonGetir, belgeKaydet } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
-import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
+import { siparistenOtomatikBelgeKes, siparistenIadeBelgesiKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
 
 interface YonetimSiparis {
   id: string;
   musteri: string;
   telefon: string;
   mutfak: string;
+  mutfakId?: string;
+  teslimatUcreti?: number;
   urunler: string;
   tutar: number;
   durum: 'hazirlaniyor' | 'kuryede' | 'teslim_edildi' | 'iptal';
@@ -91,6 +93,8 @@ export const YonetimSiparisler: React.FC = () => {
         musteri: s.musteri_adi || s.musteri || 'Müşteri',
         telefon: s.musteri_telefon || s.telefon || '',
         mutfak: s.mutfak_adi || s.mutfak || 'Ev Mutfağı',
+        mutfakId: s.mutfak_id,
+        teslimatUcreti: Number(s.teslimat_ucreti || s.teslimatUcreti || 0),
         urunler: Array.isArray(s.elemanlar)
           ? s.elemanlar.map((e: any) => `${e.yemek_baslik || e.baslik || 'Ürün'} (${e.adet}x)`).join(', ')
           : s.urunler || 'Ev Lezzeti Menüsü',
@@ -142,11 +146,15 @@ export const YonetimSiparisler: React.FC = () => {
             id: hedef.id,
             siparis_kodu: hedef.id,
             musteri_adi: hedef.musteri,
+            mutfak_id: hedef.mutfakId,
             mutfak_adi: hedef.mutfak,
+            teslimat_ucreti: hedef.teslimatUcreti,
             toplam_tutar: hedef.tutar,
             durum: 'teslim_edildi'
           }).catch(() => {});
         }
+      } else if (yeniDurum === 'iptal') {
+        siparistenIadeBelgesiKes(id, 'Yönetim tarafından sipariş iptal edildi').catch(() => {});
       }
     } catch (hata) {
       console.warn('Sipariş durum güncelleme hatası:', hata);

@@ -24,14 +24,16 @@ export const FaturaFiltreCubugu: React.FC<FiltreProps> = ({
   bitisTarih, setBitisTarih, otomatikUretYukleniyor, onOtomatikUret, onCsvIndir, onYeniAc
 }) => (
   <div className="p-4 rounded-2xl bg-[#180A1F] border border-[#3E1646] space-y-3 text-xs">
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0">
         {[
-          { id: 'hepsi', baslik: 'Tüm Belgeler' },
+          { id: 'hepsi', baslik: 'Tümü' },
           { id: 'gider_pusulasi', baslik: 'Gider Pusulası' },
           { id: 'earSiv_fatura', baslik: 'E-Arşiv' },
           { id: 'komisyon_faturasi', baslik: 'Komisyon' },
-          { id: 'kurye_makbuz', baslik: 'Kurye Makbuz' }
+          { id: 'kurye_makbuz', baslik: 'Esnaf Kurye' },
+          { id: 'sanal_pos_faturasi', baslik: 'Sanal POS' },
+          { id: 'iade_iptal', baslik: 'İade / İptal' }
         ].map((t) => (
           <button key={t.id} type="button" onClick={() => setTipFiltresi(t.id)}
             className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer whitespace-nowrap ${
@@ -42,7 +44,7 @@ export const FaturaFiltreCubugu: React.FC<FiltreProps> = ({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
         <button type="button" disabled={otomatikUretYukleniyor} onClick={onOtomatikUret}
           className="px-3 py-2 rounded-xl bg-blue-950/70 hover:bg-blue-900 border border-blue-600/50 text-blue-200 font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
           <RefreshCw className={`w-3.5 h-3.5 ${otomatikUretYukleniyor ? 'animate-spin' : ''}`} />
