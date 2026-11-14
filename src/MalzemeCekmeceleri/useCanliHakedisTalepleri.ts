@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { HakedisCekimTalebi } from '@/src/veritabani/GercekVeriYardimcisi';
-import { 
-  koleksiyonuCanliDinle, 
-  koleksiyonGetir, 
+import {
+  koleksiyonuCanliDinle,
+  koleksiyonGetir,
   belgeKaydet,
   belgeSil
 } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { patronBildirimiEkle } from './PatronBildirimServisi';
+import { hakedistenFaturaKes } from './Finans/otomatikFaturaUretici';
 
 export const BASLANGIC_HAKEDIS_TALEPLERI: HakedisCekimTalebi[] = [];
 
@@ -16,47 +17,48 @@ export function useCanliHakedisTalepleri() {
 
   useEffect(() => {
     let aktif = true;
-
     const abonelikDurdur = koleksiyonuCanliDinle<HakedisCekimTalebi>('hakedis_talepleri', (guncel) => {
       if (!aktif) return;
-      const gercekTalepler = (guncel || []).filter(t => t.id !== 'hak-1' && t.id !== 'hak-2');
-      setTalepler(gercekTalepler);
+      setTalepler((guncel || []).filter(t => t.id !== 'hak-1' && t.id !== 'hak-2'));
       setYukleniyor(false);
     });
 
-    koleksiyonGetir<HakedisCekimTalebi>('hakedis_talepleri').then(async (mevcut) => {
+    koleksiyonGetir<HakedisCekimTalebi>('hakedis_talepleri').then((mevcut) => {
       if (!aktif) return;
-      // Eski statik test kayıtları (hak-1, hak-2) varsa temizle
-      if (mevcut && mevcut.some(t => t.id === 'hak-1' || t.id === 'hak-2')) {
+      if (mevcut?.some(t => t.id === 'hak-1' || t.id === 'hak-2')) {
         belgeSil('hakedis_talepleri', 'hak-1').catch(() => {});
         belgeSil('hakedis_talepleri', 'hak-2').catch(() => {});
       }
-      const gercekTalepler = (mevcut || []).filter(t => t.id !== 'hak-1' && t.id !== 'hak-2');
-      setTalepler(gercekTalepler);
+      setTalepler((mevcut || []).filter(t => t.id !== 'hak-1' && t.id !== 'hak-2'));
       setYukleniyor(false);
-    }).catch(() => {
-      if (aktif) setYukleniyor(false);
-    });
+    }).catch(() => { if (aktif) setYukleniyor(false); });
 
-    return () => {
-      aktif = false;
-      abonelikDurdur();
-    };
+    return () => { aktif = false; abonelikDurdur(); };
   }, []);
 
-  const talepDurumGuncelle = async (talepId: string, yeniDurum: 'odendi' | 'reddedildi' | 'beklemede', not?: string): Promise<boolean> => {
+  const talepDurumGuncelle = async (
+    talepId: string,
+    yeniDurum: 'odendi' | 'reddedildi' | 'beklemede',
+    not?: string,
+    otomatikPusulaKes = true
+  ): Promise<boolean> => {
     const guncel = talepler.find(t => t.id === talepId);
     if (!guncel) return false;
 
-    const paket = {
+    const paket: HakedisCekimTalebi = {
       ...guncel,
       durum: yeniDurum,
       odeme_tarihi: yeniDurum === 'odendi' ? new Date().toLocaleString('tr-TR') : guncel.odeme_tarihi,
+      dekont_notu: yeniDurum === 'odendi' ? (not || guncel.dekont_notu) : guncel.dekont_notu,
       red_gerekcesi: yeniDurum === 'reddedildi' ? not : undefined
     };
 
-    setTalepler(onceki => onceki.map(t => t.id === talepId ? paket : t));
+    if (yeniDurum === 'odendi' && otomatikPusulaKes) {
+      const fatura = await hakedistenFaturaKes(paket);
+      paket.otomatik_fatura_id = fatura.id;
+    }
 
+    setTalepler(onceki => onceki.map(t => t.id === talepId ? paket : t));
     try {
       await belgeKaydet('hakedis_talepleri', talepId, paket);
       return true;
@@ -66,6 +68,39 @@ export function useCanliHakedisTalepleri() {
     }
   };
 
+  const topluTalepOde = async (
+    seciliIdler: string[],
+    partiNo: string,
+    dekontNotu: string,
+    otomatikPusulaKes = true
+  ): Promise<number> => {
+    const tarihMetni = new Date().toLocaleString('tr-TR');
+    let islenenSayi = 0;
+
+    for (const id of seciliIdler) {
+      const hedef = talepler.find(t => t.id === id && t.durum === 'beklemede');
+      if (!hedef) continue;
+
+      const paket: HakedisCekimTalebi = {
+        ...hedef,
+        durum: 'odendi',
+        odeme_tarihi: tarihMetni,
+        toplu_parti_no: partiNo,
+        dekont_notu: dekontNotu || `Toplu Banka Ödemesi (${partiNo})`
+      };
+
+      if (otomatikPusulaKes) {
+        const fatura = await hakedistenFaturaKes(paket, partiNo);
+        paket.otomatik_fatura_id = fatura.id;
+      }
+
+      await belgeKaydet('hakedis_talepleri', id, paket);
+      setTalepler(onceki => onceki.map(t => t.id === id ? paket : t));
+      islenenSayi++;
+    }
+    return islenenSayi;
+  };
+
   const yeniTalepOlustur = async (yeni: HakedisCekimTalebi): Promise<boolean> => {
     setTalepler(onceki => [yeni, ...onceki]);
     try {
@@ -73,7 +108,7 @@ export function useCanliHakedisTalepleri() {
       patronBildirimiEkle(
         'hakedis_talebi',
         'Yeni Hakediş Çekim Talebi 💰',
-        `${yeni.mutfak_adi || 'Mutfak / Kurye'} tarafından ${yeni.tutar} ₺ hakediş çekim talebi iletildi.`,
+        `${yeni.mutfak_adi || yeni.kurye_adi || 'Mutfak / Kurye'} tarafından ${yeni.tutar} ₺ çekim talebi iletildi.`,
         yeni.id
       );
       return true;
@@ -83,10 +118,5 @@ export function useCanliHakedisTalepleri() {
     }
   };
 
-  return {
-    talepler,
-    yukleniyor,
-    talepDurumGuncelle,
-    yeniTalepOlustur
-  };
+  return { talepler, yukleniyor, talepDurumGuncelle, topluTalepOde, yeniTalepOlustur };
 }

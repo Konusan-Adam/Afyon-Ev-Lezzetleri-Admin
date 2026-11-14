@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Database, Download, CloudUpload, HardDrive, CheckCircle2, AlertCircle, RefreshCw, Key, Link as LinkIcon, ShieldAlert } from 'lucide-react';
+import { Database, Download, CloudUpload, HardDrive, CheckCircle2, AlertCircle, Upload, Key, Link as LinkIcon, ShieldAlert } from 'lucide-react';
 import { 
   yedeklemeAyarlariniGetir, 
+  bulutYedeklemeAyarlariniGetir,
   yedeklemeAyarlariniKaydet, 
   tumVeritabaniPaketiniOlustur, 
   bulutaYedekGonder,
+  yedekDosyasindanGeriYukle,
   YedeklemeAyarlari 
 } from '@/src/MalzemeCekmeceleri/yedeklemeServisi';
 
@@ -20,6 +22,12 @@ export const YonetimYedeklemeMerkezi: React.FC = () => {
   const [istatistik, setIstatistik] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
+    bulutYedeklemeAyarlariniGetir().then((guncel) => {
+      setAyarlar(guncel);
+      setUrlInput(guncel.hedefUrl);
+      setOtomatikAktif(guncel.otomatikYedekleme);
+      setPeriyot(guncel.otomatikPeriyot || 'gunluk');
+    });
     tumVeritabaniPaketiniOlustur().then((paket) => {
       setIstatistik(paket.kayitIstatistikleri);
     });
@@ -224,15 +232,44 @@ export const YonetimYedeklemeMerkezi: React.FC = () => {
               </div>
             </div>
 
-            <button
-              type="button"
-              disabled={yukleniyor}
-              onClick={yerelDosyaIndir}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-700 to-purple-800 hover:from-purple-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg transition-all cursor-pointer shrink-0 disabled:opacity-50"
-            >
-              <Download className="w-4 h-4 text-amber-400" />
-              <span>{yukleniyor ? 'Paketleniyor...' : 'Yedeği Bilgisayara İndir'}</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <label className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-950/60 hover:bg-amber-900 border border-amber-600/50 text-amber-200 font-bold text-xs cursor-pointer transition-all">
+                <Upload className="w-4 h-4 text-amber-400" />
+                <span>JSON Yedekten Geri Yükle</span>
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const dosya = e.target.files?.[0];
+                    if (!dosya) return;
+                    setYukleniyor(true);
+                    try {
+                      const icerik = JSON.parse(await dosya.text());
+                      const sonuc = await yedekDosyasindanGeriYukle(icerik);
+                      const paket = await tumVeritabaniPaketiniOlustur();
+                      setIstatistik(paket.kayitIstatistikleri);
+                      mesajGoster('basarili', `${sonuc.yuklenenKoleksiyon} tablodan ${sonuc.yuklenenKayit} kayıt geri yüklendi.`);
+                    } catch {
+                      mesajGoster('hata', 'Seçilen dosya geçerli bir yedek paketi değil.');
+                    } finally {
+                      setYukleniyor(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+              </label>
+
+              <button
+                type="button"
+                disabled={yukleniyor}
+                onClick={yerelDosyaIndir}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-700 to-purple-800 hover:from-purple-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg transition-all cursor-pointer shrink-0 disabled:opacity-50"
+              >
+                <Download className="w-4 h-4 text-amber-400" />
+                <span>{yukleniyor ? 'Paketleniyor...' : 'Yedeği Bilgisayara İndir'}</span>
+              </button>
+            </div>
           </div>
         </div>
 

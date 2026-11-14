@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
 import { HakedisCekimTalebi } from '@/src/veritabani/GercekVeriYardimcisi';
+import { ibanGecerliMi, ibanFormatla, tcknVknGecerliMi } from '@/src/MalzemeCekmeceleri/Finans/ibanVeKimlikDogrulama';
+import { useHakedisLimitleri } from '@/src/MalzemeCekmeceleri/Finans/hakedisLimitServisi';
 
 interface MutfakCuzdanSekmesiProps {
   mutfakId: string;
@@ -28,11 +30,14 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
   toplamSatisTutari,
 }) => {
   const { talepler, yeniTalepOlustur } = useCanliHakedisTalepleri();
+  const { limitler } = useHakedisLimitleri();
+  const mutfakAltLimit = limitler.mutfakAltLimit;
 
-  // IBAN Bilgileri (Aşçı ilk defa girdiğinde saklanır)
+  // IBAN & Kimlik Bilgileri (Aşçı ilk defa girdiğinde saklanır)
   const [hesapSahibi, setHesapSahibi] = useState('Zehra Çelik');
+  const [tcknVkn, setTcknVkn] = useState('');
   const [bankaAdi, setBankaAdi] = useState('Ziraat Bankası');
-  const [iban, setIban] = useState('TR33 0001 0001 2345 6789 0000 01');
+  const [iban, setIban] = useState('TR32 0001 0001 2345 6789 0000 01');
   const [ibanDuzenlemeModu, setIbanDuzenlemeModu] = useState(false);
 
   // Çekim Talebi Formu
@@ -66,8 +71,8 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
       setHataMesaji('Lütfen geçerli bir çekim tutarı yazınız.');
       return;
     }
-    if (Number(cekimTutari) < 500) {
-      setHataMesaji('Minimum para çekim tutarı 500 ₺\'dir.');
+    if (Number(cekimTutari) < mutfakAltLimit) {
+      setHataMesaji(`Minimum para çekim tutarı ${mutfakAltLimit} ₺'dir.`);
       return;
     }
     if (Number(cekimTutari) > cekilebilirNetBakiye) {
@@ -78,6 +83,16 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
       setHataMesaji('Lütfen geçerli bir IBAN ve Hesap Sahibi adı giriniz.');
       return;
     }
+    const ibanSonuc = ibanGecerliMi(iban);
+    if (!ibanSonuc.gecerli) {
+      setHataMesaji(ibanSonuc.hata || 'Geçersiz IBAN formatı.');
+      return;
+    }
+    const kimlikSonuc = tcknVknGecerliMi(tcknVkn);
+    if (!kimlikSonuc.gecerli) {
+      setHataMesaji(`Resmi pusula ve banka EFT için geçerli TCKN/VKN giriniz: ${kimlikSonuc.hata}`);
+      return;
+    }
 
     await yeniTalepOlustur({
       id: `hak-${Date.now()}`,
@@ -85,8 +100,9 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
       mutfak_id: mutfakId,
       mutfak_adi: mutfakAdi,
       tutar: Number(cekimTutari),
-      iban: iban.trim(),
+      iban: ibanFormatla(iban),
       hesap_sahibi: hesapSahibi.trim(),
+      tckn_vkn: tcknVkn.replace(/\D/g, ''),
       banka_adi: bankaAdi.trim(),
       durum: 'beklemede',
       talep_tarihi: new Date().toLocaleString('tr-TR'),
@@ -219,6 +235,17 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
                   </div>
                 </div>
                 <div>
+                  <label className="text-gray-400 block text-[10px] mb-1">TCKN / Vergi No (Banka & Pusula için Zorunlu) *</label>
+                  <input
+                    type="text"
+                    maxLength={11}
+                    value={tcknVkn}
+                    onChange={(e) => setTcknVkn(e.target.value.replace(/\D/g, ''))}
+                    placeholder="11 haneli TC veya 10 haneli VKN"
+                    className="w-full bg-[#120614] border border-purple-900 rounded-xl px-3 py-2 font-mono text-white outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
                   <label className="text-gray-400 block text-[10px] mb-1">IBAN Numarası</label>
                   <input
                     type="text"
@@ -234,6 +261,12 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Hesap Sahibi:</span>
                   <span className="font-bold text-white">{hesapSahibi}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">TCKN / VKN:</span>
+                  <span className={`font-mono font-bold ${tcknVkn ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {tcknVkn || 'Girilmedi (Değiştir ile ekleyin)'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Banka:</span>
@@ -284,14 +317,14 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
               <div className="relative">
                 <input
                   type="number"
-                  min="500"
+                  min={mutfakAltLimit}
                   max={cekilebilirNetBakiye}
                   value={cekimTutari}
                   onChange={(e) => {
                     setCekimTutari(e.target.value ? Number(e.target.value) : '');
                     setHataMesaji('');
                   }}
-                  placeholder="Min. 500 ₺"
+                  placeholder={`Min. ${mutfakAltLimit} ₺`}
                   className="w-full bg-[#120614] border border-purple-900 rounded-xl px-3 py-2.5 text-white font-bold text-sm outline-none focus:border-amber-400 pl-8"
                 />
                 <span className="absolute left-3 top-2.5 text-amber-400 font-bold">₺</span>
@@ -300,15 +333,15 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
 
             <button
               type="submit"
-              disabled={cekilebilirNetBakiye < 500}
+              disabled={cekilebilirNetBakiye < mutfakAltLimit}
               className={`w-full py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg ${
-                cekilebilirNetBakiye >= 500
-                  ? 'bg-amber-500 hover:bg-amber-400 text-purple-950 shadow-amber-500/20'
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                cekilebilirNetBakiye >= mutfakAltLimit
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-purple-950 shadow-emerald-500/20'
+                  : 'bg-rose-950/60 text-rose-300 cursor-not-allowed border border-rose-700/60'
               }`}
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{cekilebilirNetBakiye < 500 ? 'Minimum Çekim Tutarı 500 ₺' : 'Hakediş Çekim Talebi Oluştur'}</span>
+              <span>{cekilebilirNetBakiye < mutfakAltLimit ? `Minimum Çekim Tutarı ${mutfakAltLimit} ₺` : 'Hakediş Çekim Talebi Oluştur'}</span>
             </button>
           </form>
         </div>
@@ -328,7 +361,7 @@ export const MutfakCuzdanSekmesi: React.FC<MutfakCuzdanSekmesiProps> = ({
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-400">
                 <Wallet className="w-10 h-10 text-purple-800 mb-2" />
                 <p className="text-xs font-bold text-white">Henüz çekim talebi oluşturulmadı.</p>
-                <p className="text-[11px] mt-0.5">Bakiyeniz 500 ₺'ye ulaştığında banka hesabınıza çekim yapabilirsiniz.</p>
+                <p className="text-[11px] mt-0.5">Bakiyeniz {mutfakAltLimit} ₺'ye ulaştığında banka hesabınıza çekim yapabilirsiniz.</p>
               </div>
             ) : (
               <div className="space-y-2.5 overflow-y-auto max-h-[380px] pr-1">

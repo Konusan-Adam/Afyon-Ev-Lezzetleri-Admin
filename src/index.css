@@ -94,3 +94,29 @@ html.acik-tema h4:not([class*="text-amber"]) {
 ::-webkit-scrollbar-thumb:hover {
   background: #8B1E10;
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .yazdirilabilir-fatura,
+  .yazdirilabilir-fatura * {
+    visibility: visible !important;
+  }
+  .yazdirilabilir-fatura {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  .yazdirma-gizle {
+    display: none !important;
+  }
+}

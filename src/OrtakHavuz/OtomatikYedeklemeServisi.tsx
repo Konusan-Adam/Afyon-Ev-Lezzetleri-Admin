@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { 
-  yedeklemeAyarlariniGetir, 
+  bulutYedeklemeAyarlariniGetir, 
   otomatikYedeklemeGerekiyorMu, 
   bulutaYedekGonder 
 } from '@/src/MalzemeCekmeceleri/yedeklemeServisi';
@@ -16,7 +16,7 @@ export const OtomatikYedeklemeServisi: React.FC = () => {
   useEffect(() => {
     const gorevKontrolEt = async () => {
       if (calisiyorRef.current) return;
-      const ayarlar = yedeklemeAyarlariniGetir();
+      const ayarlar = await bulutYedeklemeAyarlariniGetir();
 
       if (otomatikYedeklemeGerekiyorMu(ayarlar)) {
         calisiyorRef.current = true;

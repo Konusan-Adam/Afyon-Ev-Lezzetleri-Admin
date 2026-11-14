@@ -74,8 +74,13 @@ export interface HakedisCekimTalebi {
   iban: string;
   banka_adi?: string;
   hesap_sahibi: string;
+  tckn_vkn?: string;
   durum: 'beklemede' | 'odendi' | 'reddedildi';
   talep_tarihi: string;
+  odeme_tarihi?: string;
+  dekont_notu?: string;
+  toplu_parti_no?: string;
+  otomatik_fatura_id?: string;
   not?: string;
   [key: string]: any;
 }

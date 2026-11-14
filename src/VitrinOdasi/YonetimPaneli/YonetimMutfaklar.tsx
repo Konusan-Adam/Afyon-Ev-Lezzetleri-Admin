@@ -18,17 +18,16 @@ import {
   Trash2,
   Edit3,
   Wallet,
-  Building,
-  CreditCard
+  Building
 } from 'lucide-react';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
-import { HakedisCekimTalebi } from '@/src/veritabani/CanliVeriYardimcisi';
+import { HakedisYonetimMerkezi } from './HakedisYonetimi/HakedisYonetimMerkezi';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 
 export const YonetimMutfaklar: React.FC = () => {
-  const { talepler, talepDurumGuncelle } = useCanliHakedisTalepleri();
+  const { talepler } = useCanliHakedisTalepleri();
   // İç sekme: 'ev_mutfaklari' | 'ticari_mutfaklar' | 'hakedisler_odemeler'
   const [altSekme, setAltSekme] = useState<'ev_mutfaklari' | 'ticari_mutfaklar' | 'hakedisler_odemeler'>('ev_mutfaklari');
 
@@ -75,13 +74,6 @@ export const YonetimMutfaklar: React.FC = () => {
     }
     yukle();
   }, []);
-
-  // Hakediş state
-  const [hakedisArama, setHakedisArama] = useState('');
-  const [hakedisDurumFiltresi, setHakedisDurumFiltresi] = useState<'hepsi' | 'beklemede' | 'odendi' | 'reddedildi'>('hepsi');
-  const [seciliTalep, setSeciliTalep] = useState<HakedisCekimTalebi | null>(null);
-  const [dekontNotu, setDekontNotu] = useState('');
-  const [sayac, setSayac] = useState(0);
 
   // Yeni Mutfak Form State
   const [yeniAd, setYeniAd] = useState('');
@@ -302,40 +294,6 @@ export const YonetimMutfaklar: React.FC = () => {
         console.warn('Mutfak onay güncelleme hatası:', err);
       }
     }
-  };
-
-  // Hakediş fonksiyonları
-  const filtrelenmisTalepler = talepler.filter((talep) => {
-    const baslik = talep.mutfak_adi || talep.kurye_adi || '';
-    const metinUyumu =
-      baslik.toLowerCase().includes(hakedisArama.toLowerCase()) ||
-      (talep.hesap_sahibi || '').toLowerCase().includes(hakedisArama.toLowerCase()) ||
-      talep.iban.toLowerCase().includes(hakedisArama.toLowerCase());
-
-    const durumUyumu = hakedisDurumFiltresi === 'hepsi' || talep.durum === hakedisDurumFiltresi;
-    return metinUyumu && durumUyumu;
-  });
-
-  const toplamBekleyen = talepler
-    .filter((t) => t.durum === 'beklemede')
-    .reduce((acc, t) => acc + t.tutar, 0);
-
-  const toplamOdenen = talepler
-    .filter((t) => t.durum === 'odendi')
-    .reduce((acc, t) => acc + t.tutar, 0);
-
-  const odeOnayla = async (talepId: string) => {
-    await talepDurumGuncelle(talepId, 'odendi', dekontNotu.trim() || 'EFT/Havale işlemi Afyon Merkez Muhasebe tarafından tamamlandı.');
-    setSeciliTalep(null);
-    setDekontNotu('');
-    setSayac((s) => s + 1);
-  };
-
-  const reddet = async (talepId: string) => {
-    await talepDurumGuncelle(talepId, 'reddedildi', 'IBAN bilgisi hatalı veya mutfak hesap doğrulaması yapılamadı.');
-    setSeciliTalep(null);
-    setDekontNotu('');
-    setSayac((s) => s + 1);
   };
 
   const filtrelenmisMutfaklar = mutfakListesi.filter(m => {
@@ -613,134 +571,8 @@ export const YonetimMutfaklar: React.FC = () => {
       )}
 
       {/* ================= 2. HAKEDİŞLER & ÖDEMELER SEKMESİ ================= */}
-      {altSekme === 'hakedisler_odemeler' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Finansal Özet Kartları */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-[#180A1F] border border-amber-500/40">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-amber-200">Onay Bekleyen Çekimler</span>
-                <Clock className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="text-2xl font-black text-amber-400 mt-2">
-                {toplamBekleyen.toLocaleString('tr-TR')} ₺
-              </div>
-              <p className="text-[10px] text-gray-400 mt-1">EFT/Havale bekleyen aşçı & kurye hakedişleri</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#180A1F] border border-emerald-500/40">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-emerald-200">Tamamlanan Ödemeler</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="text-2xl font-black text-emerald-400 mt-2">
-                {toplamOdenen.toLocaleString('tr-TR')} ₺
-              </div>
-              <p className="text-[10px] text-gray-400 mt-1">Hesaplara gönderilen toplam tutar</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#180A1F] border border-[#3E1646]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-300">Toplam Çekim Talebi</span>
-                <Wallet className="w-4 h-4 text-purple-300" />
-              </div>
-              <div className="text-2xl font-black text-white mt-2">
-                {talepler.length} Adet
-              </div>
-              <p className="text-[10px] text-gray-400 mt-1">Sistemdeki tüm hakediş işlemleri</p>
-            </div>
-          </div>
-
-          {/* Arama & Durum Filtreleri */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-[#180A1F] border border-[#3E1646]">
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={hakedisArama}
-                onChange={(e) => setHakedisArama(e.target.value)}
-                placeholder="Mutfak, aşçı adı veya IBAN ara..."
-                className="w-full bg-[#120614] border border-purple-900 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-amber-400"
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
-              {(['hepsi', 'beklemede', 'odendi', 'reddedildi'] as const).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setHakedisDurumFiltresi(d)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${
-                    hakedisDurumFiltresi === d
-                      ? 'bg-amber-500 text-purple-950 shadow-md'
-                      : 'bg-[#120614] text-gray-400 hover:text-white border border-purple-900/60'
-                  }`}
-                >
-                  {d === 'hepsi' ? 'Tümü' : d === 'beklemede' ? 'Bekleyenler' : d === 'odendi' ? 'Ödenenler' : 'Reddedilenler'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Talepler Listesi */}
-          <div className="space-y-3">
-            {filtrelenmisTalepler.map((talep) => (
-              <div
-                key={talep.id}
-                className="p-4 rounded-2xl bg-[#180A1F] border border-[#3E1646] hover:border-purple-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs"
-              >
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-amber-400 text-base">
-                      {talep.tutar.toLocaleString('tr-TR')} ₺
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      talep.durum === 'beklemede'
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                        : talep.durum === 'odendi'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                    }`}>
-                      {talep.durum === 'beklemede' ? 'Ödeme Bekliyor' : talep.durum === 'odendi' ? 'Ödendi ✓' : 'Reddedildi ✕'}
-                    </span>
-                  </div>
-
-                  <div className="font-bold text-white text-sm">
-                    {talep.mutfak_adi || talep.kurye_adi}
-                  </div>
-
-                  <div className="text-gray-300 flex items-center gap-2">
-                    <Building className="w-3.5 h-3.5 text-purple-400" />
-                    <span>{talep.banka_adi}</span> • <span className="font-mono text-amber-300">{talep.iban}</span> ({talep.hesap_sahibi})
-                  </div>
-
-                  <div className="text-[11px] text-gray-500">
-                    Talep Tarihi: {talep.talep_tarihi} {talep.dekont_notu && `• Not: ${talep.dekont_notu}`}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {talep.durum === 'beklemede' && (
-                    <>
-                      <button
-                        onClick={() => setSeciliTalep(talep)}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-[#130713] font-extrabold text-xs cursor-pointer hover:brightness-110 shadow-md"
-                      >
-                        Ödemeyi Onayla & Dekont Kes
-                      </button>
-                      <button
-                        onClick={() => reddet(talep.id)}
-                        className="px-3 py-2 rounded-xl bg-rose-950/60 border border-rose-900 text-rose-300 hover:bg-rose-900 cursor-pointer text-xs font-semibold"
-                      >
-                        Reddet
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ================= 2. HAKEDİŞ & TOPLU BANKA ÖDEMELERİ ================= */}
+      {altSekme === 'hakedisler_odemeler' && <HakedisYonetimMerkezi />}
 
       {/* 🌟 YENİ MUTFAK EKLEME MODALI */}
       {yeniMutfakModalAcik && (
@@ -892,52 +724,6 @@ export const YonetimMutfaklar: React.FC = () => {
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-gray-950 font-extrabold text-xs cursor-pointer"
               >
                 Kapat
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🌟 HAKEDİŞ ÖDEME ONAY MODALI */}
-      {seciliTalep && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="bg-[#180A1F] border border-amber-500/50 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl text-xs">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-amber-400" />
-              EFT / Havale Ödeme Onayı
-            </h3>
-            <div className="bg-[#120614] p-3 rounded-xl border border-purple-900 space-y-1">
-              <div>Alıcı: <strong className="text-white">{seciliTalep.mutfak_adi || seciliTalep.kurye_adi}</strong></div>
-              <div>Banka: <strong className="text-white">{seciliTalep.banka_adi}</strong></div>
-              <div>IBAN: <strong className="font-mono text-amber-300">{seciliTalep.iban}</strong></div>
-              <div>Tutar: <strong className="text-emerald-400 text-sm font-black">{seciliTalep.tutar.toLocaleString('tr-TR')} ₺</strong></div>
-            </div>
-
-            <div>
-              <label className="text-gray-400 block mb-1">Muhasebe Dekont Notu</label>
-              <input
-                type="text"
-                value={dekontNotu}
-                onChange={(e) => setDekontNotu(e.target.value)}
-                placeholder="Örn: EFT Ref No: TR-984321, İşlem Tamam"
-                className="w-full bg-[#120614] border border-purple-900 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-400"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-purple-950">
-              <button
-                type="button"
-                onClick={() => setSeciliTalep(null)}
-                className="px-4 py-2 rounded-xl bg-purple-950 text-gray-300 font-bold cursor-pointer"
-              >
-                İptal
-              </button>
-              <button
-                type="button"
-                onClick={() => odeOnayla(seciliTalep.id)}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-gray-950 font-extrabold cursor-pointer hover:brightness-110"
-              >
-                Ödemeyi Onayla & Dekont Gönder
               </button>
             </div>
           </div>

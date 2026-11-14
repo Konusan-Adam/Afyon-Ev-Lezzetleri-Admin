@@ -1,227 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  ShieldCheck, 
-  BarChart3, 
-  Store, 
-  UtensilsCrossed, 
-  ShoppingBag, 
-  LogOut, 
-  Eye, 
-  Menu, 
-  X, 
-  Clock, 
-  Sparkles, 
-  Bike, 
-  Layers,
+import React, { useState } from 'react';
+import {
+  ShieldCheck,
+  BarChart3,
+  Store,
+  UtensilsCrossed,
+  ShoppingBag,
+  LogOut,
+  Eye,
+  Menu,
+  X,
+  Sparkles,
+  Bike,
   Users,
   FileText,
-  Database, 
-  Bell, 
-  LayoutTemplate,
-  Star,
-  Navigation,
-  Megaphone,
+  Database,
+  Bell,
   MapPin,
-  ClipboardList,
-  Percent,
-  TrendingUp
+  Percent
 } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { PatronBildirimKutusu } from './PatronBildirimKutusu';
 import { usePatronBildirimleri } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
-import { YonetimOzeti } from './YonetimOzeti';
-import { YonetimMutfaklar } from './YonetimMutfaklar';
-import { YonetimYemekler } from './YonetimYemekler';
-import { YonetimSiparisler } from './YonetimSiparisler';
-import { YonetimVaryasyonlar } from './YonetimVaryasyonlar';
-import { YonetimKategoriler } from './YonetimKategoriler';
-import { YonetimMusteriler } from './YonetimMusteriler';
-import { YonetimKuryeler } from './YonetimKuryeler';
-import { YonetimAkilliKurye } from './YonetimAkilliKurye';
-import { FaturaMerkezi } from './FaturaYonetimi/FaturaMerkezi';
-import { SuperAdminHukukPaneli } from '../Bilesenler/HukukVeSozlesmeler/SuperAdminHukukPaneli';
-import { YonetimReklamBanner } from './YonetimReklamBanner';
-import { YonetimGelAlSubeleri } from './YonetimGelAlSubeleri';
-import { YonetimYedeklemeMerkezi } from './YonetimYedeklemeMerkezi';
-import { YonetimFooter } from './YonetimFooter';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
-import { kategorileriGetir } from '@/src/MalzemeCekmeceleri/kategorileriGetir';
-import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/YonetimLezzetDanismani';
-import { YonetimDegerlendirmeler } from './YonetimDegerlendirmeler';
-import { YonetimAkilliSiparisTakip } from './YonetimAkilliSiparisTakip';
+import { YonetimMutfaklar } from './YonetimMutfaklar';
+import { YonetimSiparisBirlesik } from './YonetimSiparisBirlesik';
+import { YonetimKuryeBirlesik } from './YonetimKuryeBirlesik';
+import { YonetimMenuBirlesik } from './YonetimMenuBirlesik';
+import { FaturaMerkezi } from './FaturaYonetimi/FaturaMerkezi';
 import { YonetimKomisyonlar } from './YonetimKomisyonlar';
-import { YonetimRaporlar } from './YonetimRaporlar';
+import { YonetimOzetBirlesik } from './YonetimOzetBirlesik';
+import { YonetimGelAlSubeleri } from './YonetimGelAlSubeleri';
+import { YonetimMusteriBirlesik } from './YonetimMusteriBirlesik';
+import { YonetimSistemBirlesik } from './YonetimSistemBirlesik';
+import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/YonetimLezzetDanismani';
 
-type YonetimSekmesi = 
-  | 'ozet' 
-  | 'kategoriler' 
-  | 'musteriler' 
-  | 'kuryeler' 
-  | 'akilli_kurye'
-  | 'mutfaklar' 
-  | 'yemekler' 
+type YonetimSekmesi =
+  | 'mutfaklar'
+  | 'siparisler'
+  | 'kuryeler'
+  | 'yemekler'
   | 'fatura'
-  | 'varyasyonlar' 
-  | 'siparisler' 
-  | 'reklam_banner'
-  | 'gel_al_subeleri'
-  | 'yedekleme'
-  | 'hukuk'
-  | 'footer'
-  | 'lezzet_danismani'
-  | 'degerlendirmeler'
-  | 'akilli_siparis_takip'
   | 'komisyonlar'
-  | 'raporlar';
+  | 'ozet'
+  | 'gel_al_subeleri'
+  | 'musteriler'
+  | 'sistem_ayarlari'
+  | 'lezzet_danismani';
 
 export const YonetimPaneli: React.FC = () => {
-  const { aktifKullanici, cikisYap, panelDegistir } = kullaniciHafizasiKullan();
+  const { cikisYap, panelDegistir } = kullaniciHafizasiKullan();
   const [aktifSekme, setAktifSekme] = useState<YonetimSekmesi>('mutfaklar');
   const [mobilMenuAcik, setMobilMenuAcik] = useState<boolean>(false);
-  const { kategoriler } = kategorileriGetir();
   const { talepler } = useCanliHakedisTalepleri();
 
   const bekleyenHakedisSayisi = talepler.filter(t => t.durum === 'beklemede').length;
   const [bildirimKutusuAcik, setBildirimKutusuAcik] = useState(false);
   const { okunmamisSayisi: okunmamisBildirimSayisi } = usePatronBildirimleri();
 
-  const menuElemanlari = [
+  const menuElemanlari: { id: YonetimSekmesi; baslik: string; ikon: any; rozet?: string; sayi?: number }[] = [
     {
-      id: 'mutfaklar' as YonetimSekmesi,
-      baslik: 'Mutfak Yönetimi',
+      id: 'mutfaklar',
+      baslik: 'Mutfak & Hakediş',
       ikon: Store,
-      rozet: bekleyenHakedisSayisi > 0 ? `${bekleyenHakedisSayisi} Ödeme Bekleyen` : undefined
+      rozet: bekleyenHakedisSayisi > 0 ? `${bekleyenHakedisSayisi} Bekleyen` : undefined
     },
-    {
-      id: 'kuryeler' as YonetimSekmesi,
-      baslik: 'Kurye Yönetimi',
-      ikon: Bike
-    },
-    {
-      id: 'akilli_kurye' as YonetimSekmesi,
-      baslik: 'Akıllı Kurye & Rota',
-      ikon: Navigation,
-      rozet: 'Algoritma'
-    },
-    {
-      id: 'musteriler' as YonetimSekmesi,
-      baslik: 'Müşteri Yönetimi',
-      ikon: Users
-    },
-    {
-      id: 'yemekler' as YonetimSekmesi,
-      baslik: 'Menü Yönetimi',
-      ikon: UtensilsCrossed
-    },
-    {
-      id: 'fatura' as YonetimSekmesi,
-      baslik: 'Fatura Yönetimi',
-      ikon: FileText,
-      rozet: 'E-Arşiv & Gider'
-    },
-    {
-      id: 'ozet' as YonetimSekmesi,
-      baslik: 'Genel Özet & Kasa',
-      ikon: BarChart3,
-      rozet: 'Canlı'
-    },
-    {
-      id: 'kategoriler' as YonetimSekmesi,
-      baslik: 'Kategori & Alt Gruplar',
-      ikon: Layers,
-      sayi: kategoriler.length
-    },
-    {
-      id: 'varyasyonlar' as YonetimSekmesi,
-      baslik: 'Varyasyon Şablonları',
-      ikon: Layers,
-      rozet: 'Merkez'
-    },
-    {
-      id: 'siparisler' as YonetimSekmesi,
-      baslik: 'Canlı Sipariş & Dağıtım',
-      ikon: ShoppingBag,
-      rozet: '3 Yeni'
-    },
-    {
-      id: 'reklam_banner' as YonetimSekmesi,
-      baslik: 'Reklam & Banner',
-      ikon: Megaphone,
-      rozet: 'Vitrinde'
-    },
-    {
-      id: 'gel_al_subeleri' as YonetimSekmesi,
-      baslik: 'Şube & Gel-Al Yönetimi',
-      ikon: MapPin,
-      rozet: 'Ekosistem'
-    },
-    {
-      id: 'yedekleme' as YonetimSekmesi,
-      baslik: 'Veritabanı & Arşiv',
-      ikon: Database,
-      rozet: 'DirectAdmin'
-    },
-    {
-      id: 'degerlendirmeler' as YonetimSekmesi,
-      baslik: 'Müşteri Yorumları',
-      ikon: Star
-    },
-    {
-      id: 'hukuk' as YonetimSekmesi,
-      baslik: 'Hukuk, KVKK & Loglar',
-      ikon: ShieldCheck,
-      rozet: 'Denetim'
-    },
-    {
-      id: 'footer' as YonetimSekmesi,
-      baslik: 'Footer (Alt Bilgi) Yönetimi',
-      ikon: LayoutTemplate,
-      rozet: 'Tasarım'
-    },
-    {
-      id: 'lezzet_danismani' as YonetimSekmesi,
-      baslik: 'Yapay Zeka Danışmanı',
-      ikon: Sparkles,
-      rozet: 'Canlı Asistan'
-    },
-    {
-      id: 'akilli_siparis_takip' as YonetimSekmesi,
-      baslik: 'Akıllı Sipariş & Ciro Takibi',
-      ikon: ClipboardList,
-      rozet: 'Nokta Atışı'
-    },
-    {
-      id: 'komisyonlar' as YonetimSekmesi,
-      baslik: 'Komisyon Yönetimi',
-      ikon: Percent
-    },
-    {
-      id: 'raporlar' as YonetimSekmesi,
-      baslik: 'Mali Raporlar',
-      ikon: TrendingUp
-    },
+    { id: 'siparisler', baslik: 'Sipariş & Ciro Takibi', ikon: ShoppingBag },
+    { id: 'kuryeler', baslik: 'Kurye & Rota', ikon: Bike },
+    { id: 'yemekler', baslik: 'Menü, Kategori & Varyasyon', ikon: UtensilsCrossed },
+    { id: 'fatura', baslik: 'Fatura Yönetimi', ikon: FileText, rozet: 'E-Arşiv' },
+    { id: 'komisyonlar', baslik: 'Komisyon Yönetimi', ikon: Percent },
+    { id: 'ozet', baslik: 'Genel Özet & Raporlar', ikon: BarChart3 },
+    { id: 'gel_al_subeleri', baslik: 'Şube & Gel-Al', ikon: MapPin },
+    { id: 'musteriler', baslik: 'Müşteri & Yorumlar', ikon: Users },
+    { id: 'sistem_ayarlari', baslik: 'Sistem, Site & Arşiv', ikon: Database },
+    { id: 'lezzet_danismani', baslik: 'Lezzet Danışmanı', ikon: Sparkles }
   ];
 
   const baslikGetir = () => {
     switch (aktifSekme) {
-      case 'ozet': return 'Genel Durum & Kasa Raporu';
-      case 'kategoriler': return 'Kategori ve Alt Kategori Hiyerarşisi';
-      case 'musteriler': return 'Kayıtlı Müşteri ve Cüzdan Yönetimi';
-      case 'kuryeler': return 'Kurye Operasyonları ve Sefer Hakedişleri';
-      case 'akilli_kurye': return 'Akıllı Kurye, KM Fiyatlandırma ve Rota Optimizasyon Merkezi';
-      case 'mutfaklar': return 'Mutfak Yönetimi (Ev & Ticari Mutfaklar, Hakediş & Ödemeler)';
-      case 'yemekler': return 'Menü, Tarifler ve Fiyat Yönetimi';
+      case 'mutfaklar': return 'Mutfak Yönetimi, Hakediş & Toplu Ödeme Merkezi';
+      case 'siparisler': return 'Canlı Sipariş Sevk ve Ciro Takip Masası';
+      case 'kuryeler': return 'Kurye Operasyonları, Rota ve KM Fiyatlandırma';
+      case 'yemekler': return 'Menü, Kategori ve Varyasyon Yönetimi';
       case 'fatura': return 'Fatura & Gider Pusulası Yönetim Merkezi';
-      case 'varyasyonlar': return 'Merkezi Varyasyon & Seçenek Şablonları';
-      case 'siparisler': return 'Canlı Siparişler ve Kurye Sevk Masası';
-      case 'reklam_banner': return 'Reklam, Banner ve Tepe Duyuru Yönetimi';
-      case 'gel_al_subeleri': return 'Şube & Gel-Al Yönetim Modülü (Tezgâh Stokları, Siparişler & Canlı Yayın)';
-      case 'yedekleme': return 'Firebase & DirectAdmin Veritabanı Arşiv Merkezi';
-      case 'hukuk': return 'Yasal Sözleşmeler, KVKK ve Onay Logları';
-      case 'footer': return 'Footer (Alt Bilgi) Tasarım ve İçerik Yönetimi';
-      case 'lezzet_danismani': return 'Yapay Zeka Lezzet Danışmanı Yönetimi';
       case 'komisyonlar': return 'Komisyon ve Hizmet Bedeli Yönetimi';
-      case 'raporlar': return 'Mali Raporlar ve Hakediş Analizi';
+      case 'ozet': return 'Genel Durum, Kasa ve Mali Raporlar';
+      case 'gel_al_subeleri': return 'Şube & Gel-Al Yönetim Modülü';
+      case 'musteriler': return 'Müşteriler, Cüzdan ve Yorum Yönetimi';
+      case 'sistem_ayarlari': return 'Veritabanı Arşiv, Reklam, Hukuk ve Footer Ayarları';
+      case 'lezzet_danismani': return 'Lezzet Danışmanı Yönetimi';
       default: return 'Patron Masası';
     }
   };
@@ -401,26 +268,17 @@ export const YonetimPaneli: React.FC = () => {
         </header>
 
         <main className="flex-1 p-4 lg:p-8">
-          {aktifSekme === 'ozet' && <YonetimOzeti />}
-          {aktifSekme === 'kategoriler' && <YonetimKategoriler />}
-          {aktifSekme === 'musteriler' && <YonetimMusteriler />}
-          {aktifSekme === 'kuryeler' && <YonetimKuryeler />}
-          {aktifSekme === 'akilli_kurye' && <YonetimAkilliKurye />}
           {aktifSekme === 'mutfaklar' && <YonetimMutfaklar />}
-          {aktifSekme === 'yemekler' && <YonetimYemekler />}
+          {aktifSekme === 'siparisler' && <YonetimSiparisBirlesik />}
+          {aktifSekme === 'kuryeler' && <YonetimKuryeBirlesik />}
+          {aktifSekme === 'yemekler' && <YonetimMenuBirlesik />}
           {aktifSekme === 'fatura' && <FaturaMerkezi />}
-          {aktifSekme === 'varyasyonlar' && <YonetimVaryasyonlar />}
-          {aktifSekme === 'siparisler' && <YonetimSiparisler />}
-          {aktifSekme === 'reklam_banner' && <YonetimReklamBanner />}
-          {aktifSekme === 'gel_al_subeleri' && <YonetimGelAlSubeleri />}
-          {aktifSekme === 'yedekleme' && <YonetimYedeklemeMerkezi />}
-          {aktifSekme === 'hukuk' && <SuperAdminHukukPaneli />}
-          {aktifSekme === 'footer' && <YonetimFooter />}
-          {aktifSekme === 'degerlendirmeler' && <YonetimDegerlendirmeler />}
-          {aktifSekme === 'lezzet_danismani' && <YonetimLezzetDanismani />}
-          {aktifSekme === 'akilli_siparis_takip' && <YonetimAkilliSiparisTakip />}
           {aktifSekme === 'komisyonlar' && <YonetimKomisyonlar />}
-          {aktifSekme === 'raporlar' && <YonetimRaporlar />}
+          {aktifSekme === 'ozet' && <YonetimOzetBirlesik />}
+          {aktifSekme === 'gel_al_subeleri' && <YonetimGelAlSubeleri />}
+          {aktifSekme === 'musteriler' && <YonetimMusteriBirlesik />}
+          {aktifSekme === 'sistem_ayarlari' && <YonetimSistemBirlesik />}
+          {aktifSekme === 'lezzet_danismani' && <YonetimLezzetDanismani />}
         </main>
       </div>
 

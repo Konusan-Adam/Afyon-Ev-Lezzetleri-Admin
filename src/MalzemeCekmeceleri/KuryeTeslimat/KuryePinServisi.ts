@@ -2,6 +2,7 @@ import { belgeKaydet, koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyo
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { yerelSiparisDurumGuncelle, yerelSiparisleriGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { kuryeTeslimZiliCal } from '@/src/MalzemeCekmeceleri/KuryeTeslimZili';
+import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
 
 export async function kuryePaketiUzerineAl(
   siparisId: string,
@@ -250,6 +251,8 @@ export async function kuryePinDogrulaVeTeslimEt(
     } else {
       await belgeKaydet('siparisler', siparisKodu, guncelVeri);
     }
+
+    siparistenOtomatikBelgeKes({ ...siparis, ...guncelVeri }).catch(() => {});
 
     yerelSiparisDurumGuncelle(siparis.id || siparisKodu, 'teslim_edildi', guncelVeri.durum_aciklamasi);
     if (siparis.siparis_kodu) {

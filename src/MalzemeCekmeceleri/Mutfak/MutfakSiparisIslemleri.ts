@@ -2,6 +2,7 @@ import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { belgeKaydet, koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { yerelSiparisDurumGuncelle } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
+import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
 
 export async function mutfakSiparisDurumuGuncelle(
   siparisId: string,
@@ -83,6 +84,19 @@ export async function mutfakSiparisDurumuGuncelle(
 
       if (!guncellenenVarMi && siparisId) {
         await belgeKaydet('siparisler', siparisId, guncellenecekVeri);
+      }
+
+      if (yeniDurum === 'teslim_edildi') {
+        const eslesenKayit = tumFbSiparisler?.find(
+          (fbDoc: any) =>
+            fbDoc.id === siparisId ||
+            (siparisKodu && fbDoc.id === siparisKodu) ||
+            fbDoc.siparis_kodu === siparisId ||
+            fbDoc.siparisKodu === siparisId
+        );
+        if (eslesenKayit) {
+          siparistenOtomatikBelgeKes({ ...eslesenKayit, ...guncellenecekVeri }).catch(() => {});
+        }
       }
 
       // 🔔 Bildirim tetikleyici

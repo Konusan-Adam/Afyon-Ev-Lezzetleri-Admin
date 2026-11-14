@@ -3,6 +3,7 @@ import { SubeSiparisi } from '@/src/veritabani/VeriTipleri';
 import { canliFirebaseAktifMi, belgeKaydet, koleksiyonGetir, koleksiyonuCanliDinle } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { patronZilSesiCal, patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { BASLANGIC_SUBE_SIPARISLERI } from './subeSiparisVerileri';
+import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
 
 export function subeSiparisServisi(seciliSubeId?: string) {
   const [siparisler, setSiparisler] = useState<SubeSiparisi[]>(BASLANGIC_SUBE_SIPARISLERI);
@@ -28,6 +29,10 @@ export function subeSiparisServisi(seciliSubeId?: string) {
   const durumGuncelle = async (siparisId: string, durum: SubeSiparisi['durum']) => {
     setSiparisler(prev => prev.map(s => s.id === siparisId ? { ...s, durum } : s));
     if (canliFirebaseAktifMi()) await belgeKaydet('sube_siparisleri', siparisId, { durum });
+    if (durum === 'teslim_edildi') {
+      const hedef = siparisler.find(s => s.id === siparisId);
+      if (hedef) siparistenOtomatikBelgeKes({ ...hedef, durum: 'teslim_edildi' }).catch(() => {});
+    }
   };
 
   const siparisEkle = async (yeni: Partial<SubeSiparisi> & Pick<SubeSiparisi, 'sube_id' | 'sube_adi' | 'musteri_adi' | 'musteri_telefon' | 'toplam_tutar'>) => {

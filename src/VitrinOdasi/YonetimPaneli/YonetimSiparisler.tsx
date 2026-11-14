@@ -3,6 +3,7 @@ import { ShoppingBag, Clock, CheckCircle2, Bike, AlertCircle, RefreshCw, XCircle
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonuCanliDinle, koleksiyonGetir, belgeKaydet } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
+import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
 
 interface YonetimSiparis {
   id: string;
@@ -133,6 +134,20 @@ export const YonetimSiparisler: React.FC = () => {
         `#${id} nolu sipariş durumu: ${metinMap[yeniDurum]}`,
         id
       );
+
+      if (yeniDurum === 'teslim_edildi') {
+        const hedef = siparisler.find(s => s.id === id);
+        if (hedef) {
+          siparistenOtomatikBelgeKes({
+            id: hedef.id,
+            siparis_kodu: hedef.id,
+            musteri_adi: hedef.musteri,
+            mutfak_adi: hedef.mutfak,
+            toplam_tutar: hedef.tutar,
+            durum: 'teslim_edildi'
+          }).catch(() => {});
+        }
+      }
     } catch (hata) {
       console.warn('Sipariş durum güncelleme hatası:', hata);
     }

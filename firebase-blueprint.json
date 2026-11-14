@@ -280,6 +280,86 @@
         "olusturma_tarihi": { "type": "string", "maxLength": 50 }
       },
       "required": ["id", "sube_id", "toplam_tutar", "durum"]
+    },
+    "SistemAyar": {
+      "title": "SistemAyar",
+      "description": "Sistem kupon ve mutfak teslimat yapılandırma ayarları",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "kod": { "type": "string", "maxLength": 50 },
+        "aktif": { "type": "boolean" },
+        "minSiparisTutari": { "type": "number" },
+        "teslimatUcreti": { "type": "number" }
+      },
+      "required": ["id"]
+    },
+    "Fatura": {
+      "title": "Fatura",
+      "description": "E-Arşiv, komisyon faturası ve gider pusulası kayıtları",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "fatura_no": { "type": "string", "maxLength": 64 },
+        "tip": { "type": "string", "maxLength": 50 },
+        "durum": { "type": "string", "maxLength": 30 },
+        "genel_toplam": { "type": "number" }
+      },
+      "required": ["id", "tip", "durum"]
+    },
+    "HakedisTalebi": {
+      "title": "HakedisTalebi",
+      "description": "Mutfak ve kurye para çekme (hakediş) talepleri",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "talep_eden_id": { "type": "string", "maxLength": 64 },
+        "tutar": { "type": "number" },
+        "durum": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["id", "talep_eden_id", "tutar", "durum"]
+    },
+    "KomisyonAyar": {
+      "title": "KomisyonAyar",
+      "description": "Platform komisyon ve hizmet bedeli ayarları",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "oran": { "type": "number" }
+      },
+      "required": ["id"]
+    },
+    "Sozlesme": {
+      "title": "Sozlesme",
+      "description": "Hukuki sözleşme ve aydınlatma metinleri",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "tur": { "type": "string", "maxLength": 64 },
+        "baslik": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id"]
+    },
+    "HukukiOnayLog": {
+      "title": "HukukiOnayLog",
+      "description": "Kullanıcı sözleşme onay kayıtları",
+      "type": "object",
+      "properties": {
+        "kimlik": { "type": "string", "maxLength": 64 },
+        "sozlesme_turu": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["kimlik"]
+    },
+    "PatronBildirimi": {
+      "title": "PatronBildirimi",
+      "description": "Yönetici paneli canlı bildirim kayıtları",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "baslik": { "type": "string", "maxLength": 200 },
+        "okundu_mu": { "type": "boolean" }
+      },
+      "required": ["id", "baslik"]
     }
   },
   "firestore": {
@@ -323,6 +403,10 @@
       "schema": "ReklamAyar",
       "description": "Reklam ve banner vitrin ayarları"
     },
+    "/sistem_ayarlari/{ayarId}": {
+      "schema": "SistemAyar",
+      "description": "Kupon ve mutfak teslimat ayarları"
+    },
     "/kampanyalar/{kampanyaId}": {
       "schema": "Kampanya",
       "description": "Kampanya ve afiş listesi"
@@ -346,6 +430,30 @@
     "/musteri_adresleri/{adresId}": {
       "schema": "MusteriAdresi",
       "description": "Müşteri teslimat adresleri"
+    },
+    "/faturalar/{faturaId}": {
+      "schema": "Fatura",
+      "description": "Faturalar ve gider pusulaları"
+    },
+    "/hakedis_talepleri/{talepId}": {
+      "schema": "HakedisTalebi",
+      "description": "Hakediş ödeme talepleri"
+    },
+    "/komisyon_ayarlari/{komisyonId}": {
+      "schema": "KomisyonAyar",
+      "description": "Komisyon ayarları"
+    },
+    "/sozlesmeler/{sozlesmeId}": {
+      "schema": "Sozlesme",
+      "description": "Hukuki sözleşme metinleri"
+    },
+    "/hukuki_onay_loglari/{logId}": {
+      "schema": "HukukiOnayLog",
+      "description": "Hukuki onay logları"
+    },
+    "/patron_bildirimleri/{bildirimId}": {
+      "schema": "PatronBildirimi",
+      "description": "Patron paneli bildirimleri"
     }
   }
 }

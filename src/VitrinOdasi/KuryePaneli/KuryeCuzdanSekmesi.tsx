@@ -16,6 +16,8 @@ import {
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { belgeKaydet } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { ibanGecerliMi, ibanFormatla, tcknVknGecerliMi } from '@/src/MalzemeCekmeceleri/Finans/ibanVeKimlikDogrulama';
+import { useHakedisLimitleri } from '@/src/MalzemeCekmeceleri/Finans/hakedisLimitServisi';
 
 interface KuryeCuzdanSekmesiProps {
   kuryeId?: string;
@@ -31,12 +33,15 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
   teslimEdilenler = []
 }) => {
   const { talepler, yeniTalepOlustur } = useCanliHakedisTalepleri();
+  const { limitler } = useHakedisLimitleri();
+  const kuryeAltLimit = limitler.kuryeAltLimit;
 
-  // IBAN Bilgileri (Kuryenin kendi profili veya boş)
+  // IBAN & Kimlik Bilgileri (Kuryenin kendi profili veya boş)
   const [hesapSahibi, setHesapSahibi] = useState(aktifKullanici?.ad_soyad || kuryeAdi || '');
+  const [tcknVkn, setTcknVkn] = useState(aktifKullanici?.tckn_vkn || '');
   const [bankaAdi, setBankaAdi] = useState(aktifKullanici?.banka_adi || 'Ziraat Bankası');
   const [iban, setIban] = useState(aktifKullanici?.iban || '');
-  const [ibanDuzenlemeModu, setIbanDuzenlemeModu] = useState(!aktifKullanici?.iban);
+  const [ibanDuzenlemeModu, setIbanDuzenlemeModu] = useState(!aktifKullanici?.iban || !aktifKullanici?.tckn_vkn);
 
   // Çekim Talebi Formu
   const [cekimTutari, setCekimTutari] = useState<number | ''>('');
@@ -74,13 +79,25 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
   const cekilebilirNetBakiye = Math.max(0, toplamHakEdilen - odenenToplam - bekleyenToplam);
 
   const ibanKaydet = async () => {
+    setHataMesaji('');
+    const ibanSonuc = ibanGecerliMi(iban);
+    if (!ibanSonuc.gecerli) {
+      setHataMesaji(ibanSonuc.hata || 'Geçersiz IBAN formatı.');
+      return;
+    }
+    const kimlikSonuc = tcknVknGecerliMi(tcknVkn);
+    if (!kimlikSonuc.gecerli) {
+      setHataMesaji(kimlikSonuc.hata || 'Geçersiz TCKN/VKN.');
+      return;
+    }
     setIbanDuzenlemeModu(false);
     if (kuryeId && canliFirebaseAktifMi()) {
       try {
         await belgeKaydet('kullanicilar', kuryeId, {
-          iban: iban.trim(),
+          iban: ibanFormatla(iban),
           banka_adi: bankaAdi.trim(),
-          hesap_sahibi: hesapSahibi.trim()
+          hesap_sahibi: hesapSahibi.trim(),
+          tckn_vkn: tcknVkn.replace(/\D/g, '')
         });
       } catch (err) {
         console.warn('IBAN kaydetme hatası:', err);
@@ -96,8 +113,8 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
       setHataMesaji('Lütfen geçerli bir çekim tutarı yazınız.');
       return;
     }
-    if (Number(cekimTutari) < 300) {
-      setHataMesaji('Minimum kurye prim çekim tutarı 300 ₺\'dir.');
+    if (Number(cekimTutari) < kuryeAltLimit) {
+      setHataMesaji(`Minimum kurye prim çekim tutarı ${kuryeAltLimit} ₺'dir.`);
       return;
     }
     if (Number(cekimTutari) > cekilebilirNetBakiye) {
@@ -106,6 +123,16 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
     }
     if (!iban.trim() || !hesapSahibi.trim()) {
       setHataMesaji('Lütfen geçerli bir IBAN ve Hesap Sahibi adı giriniz.');
+      return;
+    }
+    const ibanSonuc = ibanGecerliMi(iban);
+    if (!ibanSonuc.gecerli) {
+      setHataMesaji(ibanSonuc.hata || 'Geçersiz IBAN formatı.');
+      return;
+    }
+    const kimlikSonuc = tcknVknGecerliMi(tcknVkn);
+    if (!kimlikSonuc.gecerli) {
+      setHataMesaji(`Banka EFT ve resmi makbuz için geçerli TCKN/VKN giriniz: ${kimlikSonuc.hata}`);
       return;
     }
 
@@ -118,8 +145,9 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
       mutfak_id: '',
       mutfak_adi: kuryeAdi,
       tutar: Number(cekimTutari),
-      iban: iban.trim(),
+      iban: ibanFormatla(iban),
       hesap_sahibi: hesapSahibi.trim(),
+      tckn_vkn: tcknVkn.replace(/\D/g, ''),
       banka_adi: bankaAdi.trim(),
       talep_tarihi: new Date().toLocaleString('tr-TR'),
       durum: 'beklemede'
@@ -260,6 +288,17 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
                   </div>
                 </div>
                 <div>
+                  <label className="text-gray-400 block text-[10px] mb-1">TCKN / Vergi No (Banka & Makbuz için Zorunlu) *</label>
+                  <input
+                    type="text"
+                    maxLength={11}
+                    value={tcknVkn}
+                    onChange={(e) => setTcknVkn(e.target.value.replace(/\D/g, ''))}
+                    placeholder="11 haneli TC veya 10 haneli VKN"
+                    className="w-full bg-[#120614] border border-purple-900 rounded-xl px-3 py-2 font-mono text-white outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
                   <label className="text-gray-400 block text-[10px] mb-1">IBAN Numarası</label>
                   <input
                     type="text"
@@ -275,6 +314,12 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Hesap Sahibi:</span>
                   <span className="font-bold text-white">{hesapSahibi}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">TCKN / VKN:</span>
+                  <span className={`font-mono font-bold ${tcknVkn ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {tcknVkn || 'Girilmedi'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Banka:</span>
@@ -325,14 +370,14 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
               <div className="relative">
                 <input
                   type="number"
-                  min="300"
+                  min={kuryeAltLimit}
                   max={cekilebilirNetBakiye}
                   value={cekimTutari}
                   onChange={(e) => {
                     setCekimTutari(e.target.value ? Number(e.target.value) : '');
                     setHataMesaji('');
                   }}
-                  placeholder="Min. 300 ₺"
+                  placeholder={`Min. ${kuryeAltLimit} ₺`}
                   className="w-full bg-[#120614] border border-purple-900 rounded-xl px-3 py-2.5 text-white font-bold text-sm outline-none focus:border-emerald-400 pl-8"
                 />
                 <span className="absolute left-3 top-2.5 text-emerald-400 font-bold">₺</span>
@@ -341,15 +386,15 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
 
             <button
               type="submit"
-              disabled={cekilebilirNetBakiye < 300}
+              disabled={cekilebilirNetBakiye < kuryeAltLimit}
               className={`w-full py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg ${
-                cekilebilirNetBakiye >= 300
+                cekilebilirNetBakiye >= kuryeAltLimit
                   ? 'bg-emerald-500 hover:bg-emerald-400 text-purple-950 shadow-emerald-500/20'
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                  : 'bg-rose-950/60 text-rose-300 cursor-not-allowed border border-rose-700/60'
               }`}
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{cekilebilirNetBakiye < 300 ? 'Minimum Çekim Tutarı 300 ₺' : 'Kurye Hakediş Çekim Talebi Ver'}</span>
+              <span>{cekilebilirNetBakiye < kuryeAltLimit ? `Minimum Çekim Tutarı ${kuryeAltLimit} ₺` : 'Kurye Hakediş Çekim Talebi Ver'}</span>
             </button>
           </form>
         </div>
@@ -369,7 +414,7 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-400">
                 <Wallet className="w-10 h-10 text-purple-800 mb-2" />
                 <p className="text-xs font-bold text-white">Henüz çekim talebi oluşturmadınız.</p>
-                <p className="text-[11px] mt-0.5">Bakiyeniz 300 ₺'ye ulaştığında banka hesabınıza çekim yapabilirsiniz.</p>
+                <p className="text-[11px] mt-0.5">Bakiyeniz {kuryeAltLimit} ₺'ye ulaştığında banka hesabınıza çekim yapabilirsiniz.</p>
               </div>
             ) : (
               <div className="space-y-2.5 overflow-y-auto max-h-[380px] pr-1">
