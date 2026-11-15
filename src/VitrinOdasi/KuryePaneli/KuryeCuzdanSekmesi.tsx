@@ -18,6 +18,8 @@ import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { belgeKaydet } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { ibanGecerliMi, ibanFormatla, tcknVknGecerliMi } from '@/src/MalzemeCekmeceleri/Finans/ibanVeKimlikDogrulama';
 import { useHakedisLimitleri } from '@/src/MalzemeCekmeceleri/Finans/hakedisLimitServisi';
+import { useCanliHakedisHareketleri } from '@/src/MalzemeCekmeceleri/Finans/useCanliHakedisHareketleri';
+import { siparisKuryeUcretiBul } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriTipleri';
 
 interface KuryeCuzdanSekmesiProps {
   kuryeId?: string;
@@ -34,7 +36,9 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
 }) => {
   const { talepler, yeniTalepOlustur } = useCanliHakedisTalepleri();
   const { limitler } = useHakedisLimitleri();
+  const { hareketler, bakiyeOzeti, tabanKuryeUcreti } = useCanliHakedisHareketleri(kuryeId, 'kurye');
   const kuryeAltLimit = limitler.kuryeAltLimit;
+  const [sagSekme, setSagSekme] = useState<'talepler' | 'defter'>('talepler');
 
   // IBAN & Kimlik Bilgileri (Kuryenin kendi profili veya boş)
   const [hesapSahibi, setHesapSahibi] = useState(aktifKullanici?.ad_soyad || kuryeAdi || '');
@@ -49,27 +53,39 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
   const [hataMesaji, setHataMesaji] = useState('');
   const [, setGuncellemeSayaci] = useState(0);
 
-  // Paket Başı Prim: 45 ₺
-  const paketBasiUcret = 45;
   const tamamlananTeslimatSayisi = (teslimEdilenler && teslimEdilenler.length > 0)
     ? teslimEdilenler.length
-    : (aktifKullanici?.tamamlanan_siparis || aktifKullanici?.toplam_teslimat || 0);
+    : (aktifKullanici?.tamamlanan_siparis || aktifKullanici?.toplam_teslimat || hareketler.filter((h) => h.hareket_tipi === 'siparis_hakedis').length);
 
-  const bugunKazanc = tamamlananTeslimatSayisi * paketBasiUcret;
+  const teslimatlardanHesaplanan = (teslimEdilenler || []).reduce(
+    (acc, s) => acc + siparisKuryeUcretiBul(s, tabanKuryeUcreti),
+    0
+  );
 
-  // Gerçek Hak Edilen Kazanç: Kullanıcı bakiyesi tanımlıysa veya teslimat adedi üzerinden
-  const toplamHakEdilen = typeof aktifKullanici?.bakiye === 'number' && aktifKullanici.bakiye > 0
-    ? aktifKullanici.bakiye
-    : bugunKazanc;
+  const bugunKazanc =
+    bakiyeOzeti.netHakEdilen > 0
+      ? Math.round(bakiyeOzeti.netHakEdilen)
+      : teslimatlardanHesaplanan > 0
+      ? Math.round(teslimatlardanHesaplanan)
+      : Math.round(tamamlananTeslimatSayisi * tabanKuryeUcreti);
+
+  const toplamHakEdilen =
+    bakiyeOzeti.netHakEdilen > 0
+      ? Math.round(bakiyeOzeti.netHakEdilen)
+      : typeof aktifKullanici?.bakiye === 'number' && aktifKullanici.bakiye > 0
+      ? Math.round(aktifKullanici.bakiye)
+      : bugunKazanc;
 
   // Canlı Kurye Çekim Talepleri
   const kuryeTalepleri = talepler.filter(
     (t) => t.kurye_id === kuryeId || (t.rol_tipi === 'kurye' && t.kurye_adi === kuryeAdi)
   );
 
-  const odenenToplam = kuryeTalepleri
+  const talepOdenenToplam = kuryeTalepleri
     .filter((t) => t.durum === 'odendi')
     .reduce((acc, t) => acc + t.tutar, 0);
+
+  const odenenToplam = Math.max(Math.round(bakiyeOzeti.odenenCikis), talepOdenenToplam);
 
   const bekleyenToplam = kuryeTalepleri
     .filter((t) => t.durum === 'beklemede')
@@ -193,7 +209,7 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
             {bugunKazanc.toLocaleString('tr-TR')} ₺
           </div>
           <p className="text-[10px] text-gray-400 mt-1">
-            {tamamlananTeslimatSayisi} Paket Teslim Edildi (45 ₺ / Paket)
+            {tamamlananTeslimatSayisi} Paket Teslim Edildi (Taban {tabanKuryeUcreti} ₺ / Paket)
           </p>
         </div>
 
@@ -402,15 +418,54 @@ export const KuryeCuzdanSekmesi: React.FC<KuryeCuzdanSekmesiProps> = ({
         {/* Sağ Kolon: Hakediş & Çekim Geçmişi (7 Kolon) */}
         <div className="lg:col-span-7">
           <div className="p-4 rounded-2xl bg-[#1D0A20] border border-[#3E1646] h-full flex flex-col">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <Building className="w-4 h-4 text-purple-300" />
                 <h4 className="text-xs font-bold text-white">Hakediş & Çekim Hareketleri</h4>
               </div>
-              <span className="text-[10px] text-gray-400">{kuryeTalepleri.length} Talep Kayıtlı</span>
+              <div className="flex items-center gap-1 bg-[#120614] p-1 rounded-xl border border-purple-900/60 text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setSagSekme('talepler')}
+                  className={`px-2.5 py-1 rounded-lg cursor-pointer ${sagSekme === 'talepler' ? 'bg-emerald-500 text-purple-950' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Talepler ({kuryeTalepleri.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSagSekme('defter')}
+                  className={`px-2.5 py-1 rounded-lg cursor-pointer ${sagSekme === 'defter' ? 'bg-emerald-500 text-purple-950' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Defter ({hareketler.length})
+                </button>
+              </div>
             </div>
 
-            {kuryeTalepleri.length === 0 ? (
+            {sagSekme === 'defter' ? (
+              hareketler.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-400">
+                  <Wallet className="w-10 h-10 text-purple-800 mb-2" />
+                  <p className="text-xs font-bold text-white">Henüz hakediş defteri kaydınız bulunmuyor.</p>
+                  <p className="text-[11px] mt-0.5">PIN ile teslimat onaylandıkça kazançlarınız otomatik buraya işlenir.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5 overflow-y-auto max-h-[380px] pr-1">
+                  {hareketler.map((h) => (
+                    <div key={h.id} className="p-3 rounded-xl bg-[#140616] border border-purple-900/60 flex items-center justify-between gap-3 text-xs">
+                      <div className="min-w-0">
+                        <div className="font-bold text-white truncate">{h.aciklama}</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">
+                          {h.hareket_tipi === 'siparis_hakedis' ? 'Teslimat Hakedişi' : h.hareket_tipi === 'odeme_cikisi' ? 'Banka Ödeme Çıkışı' : 'İptal Kesintisi'}
+                        </div>
+                      </div>
+                      <span className={`font-black text-sm shrink-0 ${h.yon === 'giris' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {h.yon === 'giris' ? '+' : '-'}{Number(h.net_tutar).toLocaleString('tr-TR')} ₺
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : kuryeTalepleri.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-400">
                 <Wallet className="w-10 h-10 text-purple-800 mb-2" />
                 <p className="text-xs font-bold text-white">Henüz çekim talebi oluşturmadınız.</p>

@@ -3,6 +3,7 @@ import { belgeKaydet, koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyo
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { yerelSiparisDurumGuncelle } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { siparistenIadeBelgesiKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
+import { siparisIptalHakedisGeriAl } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriServisi';
 
 export async function siparisIptalEt(siparisKimligi: string, gerekceBaslik: string, detayNot?: string): Promise<boolean> {
   const aciklamaMetni = detayNot && detayNot.trim()
@@ -26,8 +27,9 @@ export async function siparisIptalEt(siparisKimligi: string, gerekceBaslik: stri
     }
   }
 
-  // 2b. Daha önce kesilmiş belge varsa karşılık İade / İptal Belgesi üret
+  // 2b. Daha önce kesilmiş belge ve hakediş varsa iptal/kesinti kaydı üret
   siparistenIadeBelgesiKes(siparisKimligi, gerekceBaslik).catch(() => {});
+  siparisIptalHakedisGeriAl(siparisKimligi, gerekceBaslik).catch(() => {});
 
   // 3. Patron Bildirimi Ekle & Ses Çal
   patronBildirimiEkle('iade_talebi', 'Sipariş İptal Edildi ⚠️', `#${siparisKimligi.substring(0, 8)} nolu sipariş iptal edildi. Gerekçe: ${gerekceBaslik}`);

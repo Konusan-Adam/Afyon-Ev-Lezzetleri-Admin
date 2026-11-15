@@ -17,6 +17,7 @@ export const YEDEKLENECEK_KOLEKSIYONLAR = [
   'siparisler',
   'faturalar',
   'hakedis_talepleri',
+  'hakedis_hareketleri',
   'sube_siparisleri',
   'sube_stoklari',
   'gel_al_subeleri',

@@ -319,6 +319,29 @@
       },
       "required": ["id", "talep_eden_id", "tutar", "durum"]
     },
+    "HakedisHareketi": {
+      "title": "HakedisHareketi",
+      "description": "Mutfak ve kurye sipariş kazancı, iptal kesintisi ve ödeme çıkışı defteri",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "alici_id": { "type": "string", "maxLength": 128 },
+        "alici_adi": { "type": "string", "maxLength": 150 },
+        "rol": { "type": "string", "enum": ["mutfak", "kurye"] },
+        "hareket_tipi": { "type": "string", "enum": ["siparis_hakedis", "odeme_cikisi", "iptal_kesintisi"] },
+        "yon": { "type": "string", "enum": ["giris", "cikis"] },
+        "brut_tutar": { "type": "number" },
+        "komisyon_orani": { "type": "number" },
+        "komisyon_tutari": { "type": "number" },
+        "net_tutar": { "type": "number" },
+        "siparis_id": { "type": "string", "maxLength": 128 },
+        "siparis_kodu": { "type": "string", "maxLength": 64 },
+        "talep_id": { "type": "string", "maxLength": 128 },
+        "aciklama": { "type": "string", "maxLength": 300 },
+        "olusturma_tarihi": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "alici_id", "rol", "hareket_tipi", "yon", "brut_tutar", "net_tutar"]
+    },
     "KomisyonAyar": {
       "title": "KomisyonAyar",
       "description": "Platform komisyon ve hizmet bedeli ayarları",
@@ -438,6 +461,10 @@
     "/hakedis_talepleri/{talepId}": {
       "schema": "HakedisTalebi",
       "description": "Hakediş ödeme talepleri"
+    },
+    "/hakedis_hareketleri/{hareketId}": {
+      "schema": "HakedisHareketi",
+      "description": "Mutfak ve kurye hakediş defteri hareket kayıtları"
     },
     "/komisyon_ayarlari/{komisyonId}": {
       "schema": "KomisyonAyar",

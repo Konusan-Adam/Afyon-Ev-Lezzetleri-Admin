@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Bike, Phone, ShieldCheck, Award, Wallet, Plus, Trash2, Edit3, CheckCircle2, Clock, Building, CreditCard, X, Search, MapPin, Navigation } from 'lucide-react';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
+import { useCanliHakedisHareketleri } from '@/src/MalzemeCekmeceleri/Finans/useCanliHakedisHareketleri';
+import { hareketlerdenBakiyeHesapla } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriTipleri';
 import { TestKurye, HakedisCekimTalebi } from '@/src/veritabani/CanliVeriYardimcisi';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 
 export const YonetimKuryeler: React.FC = () => {
   const { talepler, talepDurumGuncelle } = useCanliHakedisTalepleri();
+  const { tumHareketler } = useCanliHakedisHareketleri(undefined, 'kurye');
   const [altSekme, setAltSekme] = useState<'kuryeler' | 'hakedisler'>('kuryeler');
   const [kuryeler, setKuryeler] = useState<(TestKurye & { askida_mi?: boolean })[]>([]);
   const [yeniModalAcik, setYeniModalAcik] = useState<boolean>(false);
@@ -58,8 +61,7 @@ export const YonetimKuryeler: React.FC = () => {
   const [seciliTalep, setSeciliTalep] = useState<HakedisCekimTalebi | null>(null);
   const [dekontNotu, setDekontNotu] = useState('');
   const [, setSayac] = useState(0);
-
-  const teslimatBasiPrim = 35;
+  const [bilgiMesaji, setBilgiMesaji] = useState('');
 
   const kuryeEkle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,10 +295,19 @@ export const YonetimKuryeler: React.FC = () => {
             </button>
           </div>
 
+          {bilgiMesaji && (
+            <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs flex items-center justify-between">
+              <span>{bilgiMesaji}</span>
+              <button type="button" onClick={() => setBilgiMesaji('')} className="text-emerald-300 font-bold cursor-pointer">Kapat</button>
+            </div>
+          )}
+
           {/* Kurye Kartları */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {filtrelenmisKuryeler.map((kurye) => {
-              const toplamHakedis = (kurye.tamamlanan_siparis || 0) * teslimatBasiPrim;
+              const defter = hareketlerdenBakiyeHesapla(tumHareketler, kurye.id, 'kurye');
+              const toplamHakedis =
+                defter.hareketSayisi > 0 ? Math.round(defter.kalanBakiye) : Math.round(Number(kurye.bakiye || 0));
               const askida = kurye.askida_mi;
               return (
                 <div
@@ -397,11 +408,14 @@ export const YonetimKuryeler: React.FC = () => {
                   <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => alert(`${kurye.ad_soyad} için ${toplamHakedis} ₺ hakediş ödemesi banka hesabına başarıyla aktarıldı!`)}
+                      onClick={() => {
+                        setAltSekme('hakedisler');
+                        setBilgiMesaji(`${kurye.ad_soyad} için güncel hakediş: ${toplamHakedis.toLocaleString('tr-TR')} ₺ (Ödeme onayını aşağıdaki taleplerden tamamlayabilirsiniz).`);
+                      }}
                       className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-[#130713] font-bold text-xs hover:brightness-110 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
                     >
                       <Wallet className="w-4 h-4" />
-                      <span>Hakediş Ödemesini Onayla</span>
+                      <span>Hakediş & Ödemelere Git</span>
                     </button>
                   </div>
                 </div>

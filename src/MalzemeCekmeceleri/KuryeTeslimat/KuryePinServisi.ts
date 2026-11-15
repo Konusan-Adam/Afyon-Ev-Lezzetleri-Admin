@@ -3,6 +3,7 @@ import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServ
 import { yerelSiparisDurumGuncelle, yerelSiparisleriGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { kuryeTeslimZiliCal } from '@/src/MalzemeCekmeceleri/KuryeTeslimZili';
 import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
+import { siparisTeslimHakedisKaydet } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriServisi';
 
 export async function kuryePaketiUzerineAl(
   siparisId: string,
@@ -252,7 +253,11 @@ export async function kuryePinDogrulaVeTeslimEt(
       await belgeKaydet('siparisler', siparisKodu, guncelVeri);
     }
 
-    siparistenOtomatikBelgeKes({ ...siparis, ...guncelVeri }).catch(() => {});
+    const oncedenTeslimEdildiMi = siparis.durum === 'teslim_edildi' || siparis.asama === 'teslim_edildi';
+    const teslimPaketi = { ...siparis, ...guncelVeri };
+
+    siparistenOtomatikBelgeKes(teslimPaketi).catch(() => {});
+    const defterSonuc = await siparisTeslimHakedisKaydet(teslimPaketi).catch(() => ({ kuryeHakedis: 0, mutfakHakedis: 0 }));
 
     yerelSiparisDurumGuncelle(siparis.id || siparisKodu, 'teslim_edildi', guncelVeri.durum_aciklamasi);
     if (siparis.siparis_kodu) {
@@ -281,19 +286,20 @@ export async function kuryePinDogrulaVeTeslimEt(
 
     kuryeTeslimZiliCal(siparis.siparis_kodu || siparisKodu);
 
-    if (siparis.kurye_id) {
+    if (siparis.kurye_id && !oncedenTeslimEdildiMi) {
       const tumKullanicilar = await koleksiyonGetir<any>('kullanicilar');
       const kurye = tumKullanicilar.find((k: any) => k.id === siparis.kurye_id || k.kimlik === siparis.kurye_id);
       if (kurye) {
+        const eklenecekPrim = defterSonuc.kuryeHakedis > 0 ? defterSonuc.kuryeHakedis : 0;
         await belgeKaydet('kullanicilar', kurye.id || kurye.kimlik, {
           ...kurye,
-          bakiye: (kurye.bakiye || 0) + 35,
+          bakiye: Number((Number(kurye.bakiye || 0) + eklenecekPrim).toFixed(2)),
           toplam_teslimat: (kurye.toplam_teslimat || 0) + 1
         });
       }
     }
 
-    return { basarili: true, mesaj: 'Teslimat başarıyla tamamlandı! Priminiz hesabınıza eklendi.' };
+    return { basarili: true, mesaj: 'Teslimat başarıyla tamamlandı! Hakediş defterinize işlendi.' };
   } catch (hata: any) {
     return { basarili: false, mesaj: hata?.message || 'Teslimat onaylanırken hata oluştu.' };
   }

@@ -8,6 +8,7 @@ import {
 } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { patronBildirimiEkle } from './PatronBildirimServisi';
 import { hakedistenFaturaKes } from './Finans/otomatikFaturaUretici';
+import { talepOdemeHareketiKaydet } from './Finans/hakedisDefteriServisi';
 
 export const BASLANGIC_HAKEDIS_TALEPLERI: HakedisCekimTalebi[] = [];
 
@@ -61,6 +62,9 @@ export function useCanliHakedisTalepleri() {
     setTalepler(onceki => onceki.map(t => t.id === talepId ? paket : t));
     try {
       await belgeKaydet('hakedis_talepleri', talepId, paket);
+      if (yeniDurum === 'odendi') {
+        talepOdemeHareketiKaydet(paket).catch(() => {});
+      }
       return true;
     } catch (err) {
       console.warn('Hakediş durum güncelleme hatası:', err);
@@ -95,6 +99,7 @@ export function useCanliHakedisTalepleri() {
       }
 
       await belgeKaydet('hakedis_talepleri', id, paket);
+      talepOdemeHareketiKaydet(paket).catch(() => {});
       setTalepler(onceki => onceki.map(t => t.id === id ? paket : t));
       islenenSayi++;
     }

@@ -4,6 +4,7 @@ import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonuCanliDinle, koleksiyonGetir, belgeKaydet } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { siparistenOtomatikBelgeKes, siparistenIadeBelgesiKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
+import { siparisTeslimHakedisKaydet, siparisIptalHakedisGeriAl } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriServisi';
 
 interface YonetimSiparis {
   id: string;
@@ -11,6 +12,7 @@ interface YonetimSiparis {
   telefon: string;
   mutfak: string;
   mutfakId?: string;
+  kuryeId?: string;
   teslimatUcreti?: number;
   urunler: string;
   tutar: number;
@@ -94,6 +96,7 @@ export const YonetimSiparisler: React.FC = () => {
         telefon: s.musteri_telefon || s.telefon || '',
         mutfak: s.mutfak_adi || s.mutfak || 'Ev Mutfağı',
         mutfakId: s.mutfak_id,
+        kuryeId: s.kurye_id,
         teslimatUcreti: Number(s.teslimat_ucreti || s.teslimatUcreti || 0),
         urunler: Array.isArray(s.elemanlar)
           ? s.elemanlar.map((e: any) => `${e.yemek_baslik || e.baslik || 'Ürün'} (${e.adet}x)`).join(', ')
@@ -142,19 +145,24 @@ export const YonetimSiparisler: React.FC = () => {
       if (yeniDurum === 'teslim_edildi') {
         const hedef = siparisler.find(s => s.id === id);
         if (hedef) {
-          siparistenOtomatikBelgeKes({
+          const teslimVerisi = {
             id: hedef.id,
             siparis_kodu: hedef.id,
             musteri_adi: hedef.musteri,
             mutfak_id: hedef.mutfakId,
             mutfak_adi: hedef.mutfak,
+            kurye_id: hedef.kuryeId,
+            kurye_adi: hedef.atananKurye,
             teslimat_ucreti: hedef.teslimatUcreti,
             toplam_tutar: hedef.tutar,
             durum: 'teslim_edildi'
-          }).catch(() => {});
+          };
+          siparistenOtomatikBelgeKes(teslimVerisi).catch(() => {});
+          siparisTeslimHakedisKaydet(teslimVerisi).catch(() => {});
         }
       } else if (yeniDurum === 'iptal') {
         siparistenIadeBelgesiKes(id, 'Yönetim tarafından sipariş iptal edildi').catch(() => {});
+        siparisIptalHakedisGeriAl(id, 'Yönetim tarafından sipariş iptal edildi').catch(() => {});
       }
     } catch (hata) {
       console.warn('Sipariş durum güncelleme hatası:', hata);
@@ -162,9 +170,12 @@ export const YonetimSiparisler: React.FC = () => {
   };
 
   const kuryeAta = async (siparisId: string, kuryeAdi: string) => {
-    setSiparisler5(siparisler.map(s => s.id === siparisId ? { ...s, atananKurye: kuryeAdi } : s));
+    const secilenKurye = kuryeler.find((k) => k.ad_soyad === kuryeAdi);
+    const kuryeId = secilenKurye?.id || '';
+    setSiparisler5(siparisler.map(s => s.id === siparisId ? { ...s, atananKurye: kuryeAdi, kuryeId } : s));
     try {
       await belgeKaydet('siparisler', siparisId, {
+        ...(kuryeId ? { kurye_id: kuryeId } : {}),
         kurye_adi: kuryeAdi,
         atananKurye: kuryeAdi,
         guncellenme_tarihi: new Date().toISOString()

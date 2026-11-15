@@ -3,6 +3,7 @@ import { belgeKaydet, koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyo
 import { yerelSiparisDurumGuncelle } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
+import { siparisTeslimHakedisKaydet } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriServisi';
 
 export async function mutfakSiparisDurumuGuncelle(
   siparisId: string,
@@ -95,7 +96,9 @@ export async function mutfakSiparisDurumuGuncelle(
             fbDoc.siparisKodu === siparisId
         );
         if (eslesenKayit) {
-          siparistenOtomatikBelgeKes({ ...eslesenKayit, ...guncellenecekVeri }).catch(() => {});
+          const guncelPaket = { ...eslesenKayit, ...guncellenecekVeri };
+          siparistenOtomatikBelgeKes(guncelPaket).catch(() => {});
+          siparisTeslimHakedisKaydet(guncelPaket).catch(() => {});
         }
       }
 
