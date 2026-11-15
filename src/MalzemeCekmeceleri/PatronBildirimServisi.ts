@@ -27,6 +27,8 @@ export interface PatronBildirimi {
   tarihSaat: string;
   okundu_mu: boolean;
   ilgiliKimlik?: string;
+  hedefSekme?: string;
+  subeId?: string;
 }
 
 const YEREL_PATRON_BILDIRIMLERI_KEY = 'afyon_patron_canli_bildirimler_v1';
@@ -161,7 +163,8 @@ export const patronBildirimiEkle = (
   tur: PatronBildirimTuru,
   baslik: string,
   detay: string,
-  ilgiliKimlik?: string
+  ilgiliKimlik?: string,
+  ekBilgi?: { hedefSekme?: string; subeId?: string }
 ): PatronBildirimi => {
   console.log('[Bildirim]: Ekleme yapılıyor', tur, baslik);
   const yeniBildirim: PatronBildirimi = {
@@ -171,7 +174,9 @@ export const patronBildirimiEkle = (
     detay,
     tarihSaat: new Date().toLocaleString('tr-TR'),
     okundu_mu: false,
-    ilgiliKimlik
+    ilgiliKimlik,
+    ...(ekBilgi?.hedefSekme ? { hedefSekme: ekBilgi.hedefSekme } : {}),
+    ...(ekBilgi?.subeId ? { subeId: ekBilgi.subeId } : {}),
   };
 
   try {

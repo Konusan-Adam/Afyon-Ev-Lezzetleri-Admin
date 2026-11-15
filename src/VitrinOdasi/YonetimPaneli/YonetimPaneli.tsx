@@ -19,7 +19,8 @@ import {
   Percent
 } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
-import { PatronBildirimKutusu } from './PatronBildirimKutusu';
+import { PatronBildirimKutusu, type BildirimYonlendirmeHedefi } from './PatronBildirimKutusu';
+import { type SubeYonlendirmeBilgisi } from '../PatronMasasi/SubeYonetimi/SubeYonetimSekmesi';
 import { usePatronBildirimleri } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
 import { YonetimMutfaklar } from './YonetimMutfaklar';
@@ -55,7 +56,21 @@ export const YonetimPaneli: React.FC = () => {
 
   const bekleyenHakedisSayisi = talepler.filter(t => t.durum === 'beklemede').length;
   const [bildirimKutusuAcik, setBildirimKutusuAcik] = useState(false);
+  const [subeYonlendirme, setSubeYonlendirme] = useState<SubeYonlendirmeBilgisi | null>(null);
   const { okunmamisSayisi: okunmamisBildirimSayisi } = usePatronBildirimleri();
+
+  const bildirimSekmesineGit = (sekme: string, hedef?: BildirimYonlendirmeHedefi) => {
+    setAktifSekme(sekme as YonetimSekmesi);
+    setMobilMenuAcik(false);
+    if (sekme === 'gel_al_subeleri' && hedef?.altSekme) {
+      setSubeYonlendirme({
+        altSekme: hedef.altSekme,
+        subeId: hedef.subeId,
+        metinIpucu: hedef.metinIpucu,
+        anahtar: Date.now(),
+      });
+    }
+  };
 
   const menuElemanlari: { id: YonetimSekmesi; baslik: string; ikon: any; rozet?: string; sayi?: number }[] = [
     {
@@ -127,10 +142,7 @@ export const YonetimPaneli: React.FC = () => {
           <PatronBildirimKutusu
             acikMi={bildirimKutusuAcik}
             onKapat={() => setBildirimKutusuAcik(false)}
-            onSekmeSec={(sekme) => {
-              setAktifSekme(sekme as any);
-              setMobilMenuAcik(false);
-            }}
+            onSekmeSec={bildirimSekmesineGit}
           />
 
           <button
@@ -258,7 +270,7 @@ export const YonetimPaneli: React.FC = () => {
             <PatronBildirimKutusu
               acikMi={bildirimKutusuAcik}
               onKapat={() => setBildirimKutusuAcik(false)}
-              onSekmeSec={(sekme) => setAktifSekme(sekme as any)}
+              onSekmeSec={bildirimSekmesineGit}
             />
 
             <span className="px-3 py-1.5 rounded-xl bg-[#23092A] text-amber-300 border border-purple-800/40 text-xs font-bold">
@@ -275,7 +287,7 @@ export const YonetimPaneli: React.FC = () => {
           {aktifSekme === 'fatura' && <FaturaMerkezi />}
           {aktifSekme === 'komisyonlar' && <YonetimKomisyonlar />}
           {aktifSekme === 'ozet' && <YonetimOzetBirlesik />}
-          {aktifSekme === 'gel_al_subeleri' && <YonetimGelAlSubeleri />}
+          {aktifSekme === 'gel_al_subeleri' && <YonetimGelAlSubeleri subeYonlendirme={subeYonlendirme} />}
           {aktifSekme === 'musteriler' && <YonetimMusteriBirlesik />}
           {aktifSekme === 'sistem_ayarlari' && <YonetimSistemBirlesik />}
           {aktifSekme === 'lezzet_danismani' && <YonetimLezzetDanismani />}

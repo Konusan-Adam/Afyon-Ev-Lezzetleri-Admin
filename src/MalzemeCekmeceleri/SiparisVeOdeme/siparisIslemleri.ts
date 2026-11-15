@@ -90,13 +90,24 @@ export async function veritabaninaSiparisOlustur(
     kuponuKullanildiOlarakIsaretle(girdi.kuponKodu, girdi.musteriTelefon);
   }
 
-  // 🔔 Patron Masasına Canlı Bildirim & Ses Gönder
-  patronBildirimiEkle(
-    'yeni_siparis',
-    'Yeni Sipariş Alındı! 🛍️',
-    `#${siparisKodu} nolu ${girdi.toplamTutar} ₺ tutarındaki sipariş mutfağa iletildi. Müşteri: ${yeniSiparisKaydi.musteri_adi}`,
-    yeniSiparisKaydi.id
-  );
+  // 🔔 Patron Masasına Canlı Bildirim & Ses Gönder (Mutfak / Şube ayrımıyla)
+  const subeSiparisiMi = girdi.mutfakId?.startsWith('sube-');
+  if (subeSiparisiMi) {
+    patronBildirimiEkle(
+      'yeni_siparis',
+      `🛍️ Yeni Şube Siparişi: #${siparisKodu}`,
+      `#${siparisKodu} nolu ${girdi.toplamTutar} ₺ tutarındaki şube siparişi alındı. Müşteri: ${yeniSiparisKaydi.musteri_adi}`,
+      yeniSiparisKaydi.id,
+      { hedefSekme: 'sube_siparisleri', subeId: girdi.mutfakId }
+    );
+  } else {
+    patronBildirimiEkle(
+      'yeni_siparis',
+      'Yeni Sipariş Alındı! 🛍️',
+      `#${siparisKodu} nolu ${girdi.toplamTutar} ₺ tutarındaki sipariş mutfağa iletildi. Müşteri: ${yeniSiparisKaydi.musteri_adi}`,
+      yeniSiparisKaydi.id
+    );
+  }
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('afyon_siparis_eklendi', { detail: yeniSiparisKaydi }));

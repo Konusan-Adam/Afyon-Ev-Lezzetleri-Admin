@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { gelAlSubeleriGetir } from '@/src/MalzemeCekmeceleri/gelAlSubeleriGetir';
 import { subeStokServisi } from '@/src/MalzemeCekmeceleri/Sube/subeStokServisi';
@@ -9,7 +9,18 @@ import { SubeAltNavigasyon, SubeAltSekme } from './SubeAltNavigasyon';
 import { SubeIcerikGorunumu } from './SubeIcerikGorunumu';
 import { SubeYonetimModallari } from './SubeYonetimModallari';
 
-export const SubeYonetimSekmesi: React.FC = () => {
+export interface SubeYonlendirmeBilgisi {
+  altSekme: SubeAltSekme;
+  subeId?: string;
+  metinIpucu?: string;
+  anahtar: number;
+}
+
+interface SubeYonetimSekmesiProps {
+  subeYonlendirme?: SubeYonlendirmeBilgisi | null;
+}
+
+export const SubeYonetimSekmesi: React.FC<SubeYonetimSekmesiProps> = ({ subeYonlendirme }) => {
   const { aktifKullanici } = kullaniciHafizasiKullan();
   const { subeler, subeEkle, subeGuncelle, subeSil } = gelAlSubeleriGetir();
   const { stoklar } = subeStokServisi();
@@ -20,10 +31,28 @@ export const SubeYonetimSekmesi: React.FC = () => {
   const varsayilanId = subeAdminMi ? (aktifKullanici?.sube_id || '') : (goruntulenenSubeler[0]?.id || 'sube-1');
 
   const [seciliSubeId, setSeciliSubeId] = useState<string>(varsayilanId);
-  const [altSekme, setAltSekme] = useState<SubeAltSekme>(subeAdminMi ? 'stoklar' : 'genel_bakis');
+  const [altSekme, setAltSekme] = useState<SubeAltSekme>(
+    subeYonlendirme?.altSekme || (subeAdminMi ? 'stoklar' : 'genel_bakis')
+  );
   const [duzenleModalAcik, setDuzenleModalAcik] = useState(false);
   const [duzenlenenSube, setDuzenlenenSube] = useState<GelAlSubesi | null>(null);
   const [mudurModalSube, setMudurModalSube] = useState<GelAlSubesi | null>(null);
+
+  useEffect(() => {
+    if (!subeYonlendirme) return;
+    setAltSekme(subeYonlendirme.altSekme);
+    if (subeYonlendirme.subeId) {
+      setSeciliSubeId(subeYonlendirme.subeId);
+    } else if (subeYonlendirme.metinIpucu && goruntulenenSubeler.length > 0) {
+      const ipucuKucuk = subeYonlendirme.metinIpucu.toLocaleLowerCase('tr-TR');
+      const eslesen = goruntulenenSubeler.find((s) =>
+        s.ad && ipucuKucuk.includes(s.ad.toLocaleLowerCase('tr-TR'))
+      );
+      if (eslesen) {
+        setSeciliSubeId(eslesen.id || eslesen.kimlik || varsayilanId);
+      }
+    }
+  }, [subeYonlendirme?.anahtar, goruntulenenSubeler.length]);
 
   const seciliSube = goruntulenenSubeler.find(s => (s.id || s.kimlik) === seciliSubeId) || goruntulenenSubeler[0];
   const teslimEdilenler = siparisler.filter(s => s.durum === 'teslim_edildi');

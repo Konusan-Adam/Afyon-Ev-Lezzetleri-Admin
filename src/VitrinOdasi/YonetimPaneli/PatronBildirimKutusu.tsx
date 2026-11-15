@@ -22,10 +22,17 @@ import {
   masaustuBildirimIzniIste
 } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 
+export interface BildirimYonlendirmeHedefi {
+  sekme: string;
+  altSekme?: 'genel_bakis' | 'stoklar' | 'siparisler';
+  subeId?: string;
+  metinIpucu?: string;
+}
+
 interface PatronBildirimKutusuProps {
   acikMi: boolean;
   onKapat: () => void;
-  onSekmeSec?: (sekme: string) => void;
+  onSekmeSec?: (sekme: string, hedef?: BildirimYonlendirmeHedefi) => void;
 }
 
 export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({ 
@@ -64,6 +71,23 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
 
   const bildirimeTiklandi = (b: PatronBildirimi) => {
     if (onSekmeSec) {
+      const baslikKucuk = (b.baslik || '').toLocaleLowerCase('tr-TR');
+      const subeBildirimiMi =
+        b.hedefSekme === 'sube_siparisleri' ||
+        baslikKucuk.includes('şube') ||
+        baslikKucuk.includes('sube');
+
+      if (subeBildirimiMi) {
+        onSekmeSec('gel_al_subeleri', {
+          sekme: 'gel_al_subeleri',
+          altSekme: 'siparisler',
+          subeId: b.subeId || (b.ilgiliKimlik?.startsWith('sube-') ? b.ilgiliKimlik : undefined),
+          metinIpucu: `${b.baslik || ''} ${b.detay || ''}`.trim(),
+        });
+        onKapat();
+        return;
+      }
+
       if (b.tur === 'yeni_siparis' || b.tur === 'iade_talebi' || b.tur === 'siparis_durumu' || b.tur === 'genel') {
         onSekmeSec('siparisler');
       } else if (b.tur === 'yeni_mutfak' || b.tur === 'eksik_belge' || b.tur === 'hakedis_talebi') {

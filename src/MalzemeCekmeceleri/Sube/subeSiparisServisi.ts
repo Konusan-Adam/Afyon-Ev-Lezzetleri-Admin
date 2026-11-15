@@ -59,7 +59,13 @@ export function subeSiparisServisi(seciliSubeId?: string) {
     if (canliFirebaseAktifMi()) await belgeKaydet('sube_siparisleri', id, veri);
 
     patronZilSesiCal();
-    patronBildirimiEkle('yeni_siparis', `🛍️ Yeni Şube Siparişi: #${kod}`, `${veri.sube_adi} için ${veri.toplam_tutar} ₺ sipariş alındı.`);
+    patronBildirimiEkle(
+      'yeni_siparis',
+      `🛍️ Yeni Şube Siparişi: #${kod}`,
+      `${veri.sube_adi} için ${veri.toplam_tutar} ₺ sipariş alındı.`,
+      id,
+      { hedefSekme: 'sube_siparisleri', subeId: veri.sube_id }
+    );
   };
 
   const filtrelenmis = seciliSubeId 
