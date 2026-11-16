@@ -383,6 +383,25 @@
         "okundu_mu": { "type": "boolean" }
       },
       "required": ["id", "baslik"]
+    },
+    "MutfakAfis": {
+      "title": "MutfakAfis",
+      "description": "Mutfakların vitrin için oluşturduğu afiş ve duyurular",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "mutfak_id": { "type": "string", "maxLength": 128 },
+        "mutfak_adi": { "type": "string", "maxLength": 150 },
+        "baslik": { "type": "string", "maxLength": 200 },
+        "aciklama": { "type": "string", "maxLength": 500 },
+        "rozet": { "type": "string", "maxLength": 50 },
+        "gorsel_url": { "type": "string", "maxLength": 1000 },
+        "aktif_mi": { "type": "boolean" },
+        "onay_durumu": { "type": "string", "maxLength": 30 },
+        "onayli_mi": { "type": "boolean" },
+        "red_gerekcesi": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["id", "mutfak_id", "baslik", "gorsel_url"]
     }
   },
   "firestore": {
@@ -481,6 +500,14 @@
     "/patron_bildirimleri/{bildirimId}": {
       "schema": "PatronBildirimi",
       "description": "Patron paneli bildirimleri"
+    },
+    "/mutfak_afisleri/{afisId}": {
+      "schema": "MutfakAfis",
+      "description": "Mutfak afiş ve duyuruları"
+    },
+    "/tamamlanan_siparisler/{siparisId}": {
+      "schema": "Siparis",
+      "description": "Tamamlanan ve arşivlenen sipariş kayıtları"
     }
   }
 }

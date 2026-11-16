@@ -15,7 +15,8 @@ import {
   LogOut,
   Ban,
   Headphones,
-  Edit3
+  Edit3,
+  Megaphone
 } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { Yemek } from '@/src/veritabani/VeriTipleri';
@@ -27,6 +28,7 @@ import { YeniYemekEklePenceresi } from './YeniYemekEklePenceresi';
 import { YemekDuzenlemePenceresi } from './YemekDuzenlemePenceresi';
 import { MutfakCuzdanSekmesi } from './MutfakCuzdanSekmesi';
 import { MutfakBelgelerSekmesi } from './MutfakBelgelerSekmesi';
+import { MutfakAfisSekmesi } from './MutfakAfisSekmesi';
 import { SiparisIptalPenceresi } from '../Bilesenler/MutfakYonetimi/SiparisIptalPenceresi';
 import { MutfakZilButonu } from '../Bilesenler/Mutfak/MutfakZilButonu';
 import { MutfakTeslimatAyarKarti } from './MutfakTeslimatAyarKarti';
@@ -40,7 +42,7 @@ import { mutfakZiliCal } from '@/src/MalzemeCekmeceleri/Mutfak/MutfakZilServisi'
 export const MutfakPaneli: React.FC = () => {
   const { aktifKullanici, panelDegistir, cikisYap } = kullaniciHafizasiKullan();
   const [mutfakAcik, setMutfakAcik] = useState(true);
-  const [aktifSekme, setAktifSekme] = useState<'siparisler' | 'menum' | 'kazanc' | 'belgeler'>('siparisler');
+  const [aktifSekme, setAktifSekme] = useState<'siparisler' | 'menum' | 'kazanc' | 'belgeler' | 'afis'>('siparisler');
   const [yemekModalAcik, setYemekModalAcik] = useState(false);
   const [duzenlenenYemek, setDuzenlenenYemek] = useState<Yemek | null>(null);
   const [iptalModalSiparis, setIptalModalSiparis] = useState<{ id: string; kodu: string } | null>(null);
@@ -270,6 +272,19 @@ export const MutfakPaneli: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span>📜 Resmi İzinler & Hijyen / Muafiyet</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setAktifSekme('afis')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer whitespace-nowrap ${
+              aktifSekme === 'afis'
+                ? 'bg-[#6D237A] text-white shadow-md'
+                : 'bg-[#180A1F] text-gray-400 hover:text-white border border-[#3E1646]'
+            }`}
+          >
+            <Megaphone className="w-4 h-4 text-amber-400" />
+            <span>🖼️ Mutfak Afişim</span>
+          </button>
         </div>
 
         {/* Sekme 1: Gelen Siparişler */}
@@ -369,6 +384,15 @@ export const MutfakPaneli: React.FC = () => {
         {/* Sekme 4: Resmi İzinler & Hukuki Belgeler */}
         {aktifSekme === 'belgeler' && (
           <MutfakBelgelerSekmesi
+            mutfakId={mutfakId}
+            mutfakAdi={mutfakAdi}
+          />
+        )}
+
+        {/* Sekme 5: Mutfak Afişim */}
+        {aktifSekme === 'afis' && (
+          <MutfakAfisSekmesi
+            mutfakId={mutfakId}
             mutfakAdi={mutfakAdi}
           />
         )}

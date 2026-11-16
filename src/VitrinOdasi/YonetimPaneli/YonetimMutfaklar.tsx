@@ -18,18 +18,38 @@ import {
   Trash2,
   Edit3,
   Wallet,
-  Building
+  Building,
+  Megaphone
 } from 'lucide-react';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
+import { useCanliMutfakAfisleri } from '@/src/MalzemeCekmeceleri/useCanliMutfakAfisleri';
+import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 import { HakedisYonetimMerkezi } from './HakedisYonetimi/HakedisYonetimMerkezi';
+import { YonetimMutfakAfisleri } from './YonetimMutfaklar/YonetimMutfakAfisleri';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 
-export const YonetimMutfaklar: React.FC = () => {
+export interface MutfakYonlendirmeBilgisi {
+  altSekme: 'ev_mutfaklari' | 'ticari_mutfaklar' | 'mutfak_afisleri' | 'hakedisler_odemeler';
+  anahtar: number;
+}
+
+interface YonetimMutfaklarProps {
+  mutfakYonlendirme?: MutfakYonlendirmeBilgisi | null;
+}
+
+export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlendirme }) => {
   const { talepler } = useCanliHakedisTalepleri();
-  // İç sekme: 'ev_mutfaklari' | 'ticari_mutfaklar' | 'hakedisler_odemeler'
-  const [altSekme, setAltSekme] = useState<'ev_mutfaklari' | 'ticari_mutfaklar' | 'hakedisler_odemeler'>('ev_mutfaklari');
+  const { bekleyenSayisi: bekleyenAfisSayisi } = useCanliMutfakAfisleri();
+  // İç sekme: 'ev_mutfaklari' | 'ticari_mutfaklar' | 'mutfak_afisleri' | 'hakedisler_odemeler'
+  const [altSekme, setAltSekme] = useState<'ev_mutfaklari' | 'ticari_mutfaklar' | 'mutfak_afisleri' | 'hakedisler_odemeler'>('ev_mutfaklari');
+
+  useEffect(() => {
+    if (mutfakYonlendirme?.altSekme) {
+      setAltSekme(mutfakYonlendirme.altSekme);
+    }
+  }, [mutfakYonlendirme?.anahtar, mutfakYonlendirme?.altSekme]);
 
   const [mutfakListesi, setMutfakListesi] = useState<Mutfak[]>([]);
   const [arama, setArama] = useState('');
@@ -43,17 +63,24 @@ export const YonetimMutfaklar: React.FC = () => {
         try {
           const fbMutfaklar = await koleksiyonGetir<any>('mutfaklar');
           const formatli: Mutfak[] = fbMutfaklar.map((m) => {
-            const varsayilanTest = ['m1', 'asci_fatma_01', 'mutfak-fatma-teyze', 'mutfak-1', 'm2', 'mutfak-muzaffer'].includes(m.id || m.kimlik);
+            const mutfakId = m.id || m.kimlik;
+            const varsayilanTest = ['m1', 'asci_fatma_01', 'mutfak-fatma-teyze', 'mutfak-1', 'm2', 'mutfak-muzaffer'].includes(mutfakId);
             const onayli = m.onayli_mi !== undefined ? Boolean(m.onayli_mi) : varsayilanTest;
+
+            // Eski stok görselli mutfak kayıtlarını resmi logoya çek
+            if (mutfakId && m.gorsel_url !== RESMI_MUTFAK_LOGOSU) {
+              belgeKaydet('mutfaklar', mutfakId, { gorsel_url: RESMI_MUTFAK_LOGOSU }).catch(() => {});
+            }
+
             return {
-              id: m.id || m.kimlik,
+              id: mutfakId,
               ad: m.ad || m.mutfak_adi || 'Afyon Ev Mutfağı',
               aciklama: m.aciklama || 'Geleneksel ev lezzetleri ustası.',
               adres: m.adres || 'Afyonkarahisar',
               min_siparis_tutari: m.min_siparis_tutari || 100,
               teslimat_ucreti: m.teslimat_ucreti ?? 25,
               puan: m.puan || 5.0,
-              gorsel_url: m.gorsel_url || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
+              gorsel_url: RESMI_MUTFAK_LOGOSU,
               onayli_mi: onayli,
               onay_durumu: m.onay_durumu || (onayli ? 'onaylandi' : 'beklemede'),
               hijyen_onayli_mi: Boolean(m.hijyen_onayli_mi) || (varsayilanTest && m.hijyen_onayli_mi === undefined),
@@ -94,7 +121,7 @@ export const YonetimMutfaklar: React.FC = () => {
       min_siparis_tutari: parseFloat(yeniMinTutar) || 150,
       teslimat_ucreti: 0,
       puan: 5.0,
-      gorsel_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+      gorsel_url: RESMI_MUTFAK_LOGOSU,
       hijyen_onayli_mi: false,
       esnaf_muafiyet_onayli_mi: yeniTip === 'ev',
       askida_mi: false,
@@ -169,16 +196,19 @@ export const YonetimMutfaklar: React.FC = () => {
   const hijyenDurumDegistir = async (mutfakId: string) => {
     let yeniHijyen = false;
     let yeniOnayli = false;
+    let yeniBelgeDurum = 'beklemede';
 
     setMutfakListesi(onceki => onceki.map(m => {
       if (m.id === mutfakId) {
         yeniHijyen = !m.hijyen_onayli_mi;
         yeniOnayli = yeniHijyen && Boolean(m.esnaf_muafiyet_onayli_mi);
+        yeniBelgeDurum = yeniHijyen ? 'onaylandi' : 'reddedildi';
         return { 
           ...m, 
           hijyen_onayli_mi: yeniHijyen, 
           onayli_mi: yeniOnayli, 
-          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede' 
+          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede',
+          belgeler: m.belgeler ? { ...m.belgeler, hijyenOnayDurumu: yeniBelgeDurum as any } : undefined
         };
       }
       return m;
@@ -189,16 +219,20 @@ export const YonetimMutfaklar: React.FC = () => {
         ...onceki, 
         hijyen_onayli_mi: yeniHijyen, 
         onayli_mi: yeniOnayli, 
-        onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede' 
+        onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede',
+        belgeler: onceki.belgeler ? { ...onceki.belgeler, hijyenOnayDurumu: yeniBelgeDurum } : undefined
       } : null);
     }
 
     if (canliFirebaseAktifMi()) {
       try {
+        const hedefMutfak = mutfakListesi.find(m => m.id === mutfakId);
+        const guncelBelgeler = hedefMutfak?.belgeler ? { ...hedefMutfak.belgeler, hijyenOnayDurumu: yeniBelgeDurum } : { hijyenOnayDurumu: yeniBelgeDurum };
         await belgeKaydet('mutfaklar', mutfakId, {
           hijyen_onayli_mi: yeniHijyen,
           onayli_mi: yeniOnayli,
-          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede'
+          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede',
+          belgeler: guncelBelgeler
         });
         await belgeKaydet('kullanicilar', mutfakId, {
           onayli_mi: yeniOnayli,
@@ -213,16 +247,19 @@ export const YonetimMutfaklar: React.FC = () => {
   const muafiyetDurumDegistir = async (mutfakId: string) => {
     let yeniMuafiyet = false;
     let yeniOnayli = false;
+    let yeniBelgeDurum = 'beklemede';
 
     setMutfakListesi(onceki => onceki.map(m => {
       if (m.id === mutfakId) {
         yeniMuafiyet = !m.esnaf_muafiyet_onayli_mi;
         yeniOnayli = yeniMuafiyet && Boolean(m.hijyen_onayli_mi);
+        yeniBelgeDurum = yeniMuafiyet ? 'onaylandi' : 'reddedildi';
         return { 
           ...m, 
           esnaf_muafiyet_onayli_mi: yeniMuafiyet, 
           onayli_mi: yeniOnayli, 
-          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede' 
+          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede',
+          belgeler: m.belgeler ? { ...m.belgeler, muafiyetOnayDurumu: yeniBelgeDurum as any } : undefined
         };
       }
       return m;
@@ -233,16 +270,20 @@ export const YonetimMutfaklar: React.FC = () => {
         ...onceki, 
         esnaf_muafiyet_onayli_mi: yeniMuafiyet, 
         onayli_mi: yeniOnayli, 
-        onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede' 
+        onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede',
+        belgeler: onceki.belgeler ? { ...onceki.belgeler, muafiyetOnayDurumu: yeniBelgeDurum } : undefined
       } : null);
     }
 
     if (canliFirebaseAktifMi()) {
       try {
+        const hedefMutfak = mutfakListesi.find(m => m.id === mutfakId);
+        const guncelBelgeler = hedefMutfak?.belgeler ? { ...hedefMutfak.belgeler, muafiyetOnayDurumu: yeniBelgeDurum } : { muafiyetOnayDurumu: yeniBelgeDurum };
         await belgeKaydet('mutfaklar', mutfakId, {
           esnaf_muafiyet_onayli_mi: yeniMuafiyet,
           onayli_mi: yeniOnayli,
-          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede'
+          onay_durumu: yeniOnayli ? 'onaylandi' : 'beklemede',
+          belgeler: guncelBelgeler
         });
         await belgeKaydet('kullanicilar', mutfakId, {
           onayli_mi: yeniOnayli,
@@ -255,14 +296,20 @@ export const YonetimMutfaklar: React.FC = () => {
   };
 
   const mutfakOnayla = async (mutfakId: string, onayVer: boolean) => {
+    const durumStr = onayVer ? 'onaylandi' : 'reddedildi';
     setMutfakListesi(onceki => onceki.map(m => {
       if (m.id === mutfakId) {
         return {
           ...m,
           onayli_mi: onayVer,
-          onay_durumu: onayVer ? 'onaylandi' : 'reddedildi',
+          onay_durumu: durumStr,
           hijyen_onayli_mi: onayVer ? true : m.hijyen_onayli_mi,
-          esnaf_muafiyet_onayli_mi: onayVer ? true : m.esnaf_muafiyet_onayli_mi
+          esnaf_muafiyet_onayli_mi: onayVer ? true : m.esnaf_muafiyet_onayli_mi,
+          belgeler: m.belgeler ? {
+            ...m.belgeler,
+            hijyenOnayDurumu: onayVer ? 'onaylandi' : m.belgeler.hijyenOnayDurumu,
+            muafiyetOnayDurumu: onayVer ? 'onaylandi' : m.belgeler.muafiyetOnayDurumu
+          } : undefined
         };
       }
       return m;
@@ -272,23 +319,36 @@ export const YonetimMutfaklar: React.FC = () => {
       setSeciliMutfakBelge((onceki: any) => onceki ? {
         ...onceki,
         onayli_mi: onayVer,
-        onay_durumu: onayVer ? 'onaylandi' : 'reddedildi',
+        onay_durumu: durumStr,
         hijyen_onayli_mi: onayVer ? true : onceki.hijyen_onayli_mi,
-        esnaf_muafiyet_onayli_mi: onayVer ? true : onceki.esnaf_muafiyet_onayli_mi
+        esnaf_muafiyet_onayli_mi: onayVer ? true : onceki.esnaf_muafiyet_onayli_mi,
+        belgeler: onceki.belgeler ? {
+          ...onceki.belgeler,
+          hijyenOnayDurumu: onayVer ? 'onaylandi' : onceki.belgeler.hijyenOnayDurumu,
+          muafiyetOnayDurumu: onayVer ? 'onaylandi' : onceki.belgeler.muafiyetOnayDurumu
+        } : undefined
       } : null);
     }
 
     if (canliFirebaseAktifMi()) {
       try {
+        const hedefMutfak = mutfakListesi.find(m => m.id === mutfakId);
+        const guncelBelgeler = hedefMutfak?.belgeler ? {
+          ...hedefMutfak.belgeler,
+          hijyenOnayDurumu: onayVer ? 'onaylandi' : hedefMutfak.belgeler.hijyenOnayDurumu,
+          muafiyetOnayDurumu: onayVer ? 'onaylandi' : hedefMutfak.belgeler.muafiyetOnayDurumu
+        } : undefined;
+
         await belgeKaydet('mutfaklar', mutfakId, {
           onayli_mi: onayVer,
-          onay_durumu: onayVer ? 'onaylandi' : 'reddedildi',
+          onay_durumu: durumStr,
           hijyen_onayli_mi: onayVer ? true : undefined,
-          esnaf_muafiyet_onayli_mi: onayVer ? true : undefined
+          esnaf_muafiyet_onayli_mi: onayVer ? true : undefined,
+          belgeler: guncelBelgeler
         });
         await belgeKaydet('kullanicilar', mutfakId, {
           onayli_mi: onayVer,
-          onay_durumu: onayVer ? 'onaylandi' : 'reddedildi'
+          onay_durumu: durumStr
         });
       } catch (err) {
         console.warn('Mutfak onay güncelleme hatası:', err);
@@ -325,7 +385,7 @@ export const YonetimMutfaklar: React.FC = () => {
         </div>
 
         {/* Sekme Butonları */}
-        <div className="flex items-center bg-[#120614] p-1.5 rounded-xl border border-purple-900/60 text-xs font-bold gap-1 w-full md:w-auto">
+        <div className="flex items-center bg-[#120614] p-1.5 rounded-xl border border-purple-900/60 text-xs font-bold gap-1 w-full md:w-auto flex-wrap">
           <button
             onClick={() => setAltSekme('ev_mutfaklari')}
             className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -336,13 +396,22 @@ export const YonetimMutfaklar: React.FC = () => {
             <span>Ev Mutfakları ({mutfakListesi.length})</span>
           </button>
           <button
-            onClick={() => setAltSekme('ticari_mutfarilar' as any)}
+            onClick={() => setAltSekme('ticari_mutfaklar')}
             className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-              altSekme === ('ticari_mutfarilar' as any) ? 'bg-[#7B258B] text-white shadow-md' : 'text-gray-400 hover:text-white'
+              altSekme === 'ticari_mutfaklar' ? 'bg-[#7B258B] text-white shadow-md' : 'text-gray-400 hover:text-white'
             }`}
           >
             <Building className="w-3.5 h-3.5" />
             <span>Ticari Mutfaklar</span>
+          </button>
+          <button
+            onClick={() => setAltSekme('mutfak_afisleri')}
+            className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              altSekme === 'mutfak_afisleri' ? 'bg-[#7B258B] text-white shadow-md' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            <span>Mutfak Afiş Onayları ({bekleyenAfisSayisi})</span>
           </button>
           <button
             onClick={() => setAltSekme('hakedisler_odemeler')}
@@ -357,7 +426,9 @@ export const YonetimMutfaklar: React.FC = () => {
       </div>
 
       {/* ================= 1. EV MUTFAKLARI & TİCARİ MUTFAKLAR SEKMESİ ================= */}
-      {altSekme !== 'hakedisler_odemeler' && (
+      {altSekme === 'mutfak_afisleri' && <YonetimMutfakAfisleri />}
+
+      {altSekme !== 'hakedisler_odemeler' && altSekme !== 'mutfak_afisleri' && (
         <div className="space-y-4">
           
           {/* Arama & Ekleme Barı */}
@@ -441,9 +512,9 @@ export const YonetimMutfaklar: React.FC = () => {
                   <div className="flex gap-3.5 items-start justify-between">
                     <div className="flex items-start gap-3">
                       <img 
-                        src={mutfak.gorsel_url} 
+                        src={RESMI_MUTFAK_LOGOSU} 
                         alt={mutfak.ad} 
-                        className="w-14 h-14 rounded-xl object-cover border border-purple-800/50 shrink-0" 
+                        className="w-14 h-14 rounded-xl object-cover border border-amber-500/40 shrink-0 bg-[#1D0A20]" 
                       />
                       <div>
                         <div className="flex items-center gap-2">

@@ -184,6 +184,14 @@ service cloud.firestore {
       allow delete: if isValidId(hareketId);
     }
 
+    match /mutfak_afisleri/{afisId} {
+      allow read, write: if true;
+    }
+
+    match /tamamlanan_siparisler/{siparisId} {
+      allow read, write: if true;
+    }
+
     match /patron_bildirimleri/{bildirimId} {
       allow read: if true;
       allow write: if isValidId(bildirimId);

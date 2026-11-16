@@ -3,6 +3,7 @@ import { ArrowLeft, Star, Clock, Bike, ShieldCheck, Heart, Share2, ShoppingBag, 
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { sepetHafizasiKullan } from '@/src/OrtakHavuz';
 import { useMutfakTeslimatAyari } from '@/src/MalzemeCekmeceleri/useMutfakTeslimatAyari';
+import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 
 interface MutfakUstBaslikOzellikleri {
   mutfak: Mutfak;
@@ -39,9 +40,9 @@ export const MutfakUstBaslik: React.FC<MutfakUstBaslikOzellikleri> = ({
   return (
     <header className="relative w-full bg-[#200A25] pb-4 border-b border-purple-900/40">
       {/* Kapak Görseli */}
-      <div className="relative h-44 sm:h-56 w-full overflow-hidden bg-purple-950/60">
+      <div className="relative h-44 sm:h-56 w-full overflow-hidden bg-[#1D0A20]">
         <img
-          src={mutfak.gorsel_url}
+          src={RESMI_MUTFAK_LOGOSU}
           alt={mutfak.ad}
           className="w-full h-full object-cover"
         />

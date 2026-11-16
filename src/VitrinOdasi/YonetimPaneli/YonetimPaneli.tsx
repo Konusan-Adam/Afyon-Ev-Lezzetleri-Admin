@@ -16,14 +16,17 @@ import {
   Database,
   Bell,
   MapPin,
-  Percent
+  Percent,
+  Megaphone
 } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { PatronBildirimKutusu, type BildirimYonlendirmeHedefi } from './PatronBildirimKutusu';
 import { type SubeYonlendirmeBilgisi } from '../PatronMasasi/SubeYonetimi/SubeYonetimSekmesi';
 import { usePatronBildirimleri } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
-import { YonetimMutfaklar } from './YonetimMutfaklar';
+import { useCanliMutfakAfisleri } from '@/src/MalzemeCekmeceleri/useCanliMutfakAfisleri';
+import { YonetimMutfaklar, type MutfakYonlendirmeBilgisi } from './YonetimMutfaklar';
+import { YonetimMutfakAfisleri } from './YonetimMutfaklar/YonetimMutfakAfisleri';
 import { YonetimSiparisBirlesik } from './YonetimSiparisBirlesik';
 import { YonetimKuryeBirlesik } from './YonetimKuryeBirlesik';
 import { YonetimMenuBirlesik } from './YonetimMenuBirlesik';
@@ -37,6 +40,7 @@ import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/Yonetim
 
 type YonetimSekmesi =
   | 'mutfaklar'
+  | 'mutfak_afisleri'
   | 'siparisler'
   | 'kuryeler'
   | 'yemekler'
@@ -53,10 +57,12 @@ export const YonetimPaneli: React.FC = () => {
   const [aktifSekme, setAktifSekme] = useState<YonetimSekmesi>('mutfaklar');
   const [mobilMenuAcik, setMobilMenuAcik] = useState<boolean>(false);
   const { talepler } = useCanliHakedisTalepleri();
+  const { bekleyenSayisi: bekleyenAfisSayisi } = useCanliMutfakAfisleri();
 
   const bekleyenHakedisSayisi = talepler.filter(t => t.durum === 'beklemede').length;
   const [bildirimKutusuAcik, setBildirimKutusuAcik] = useState(false);
   const [subeYonlendirme, setSubeYonlendirme] = useState<SubeYonlendirmeBilgisi | null>(null);
+  const [mutfakYonlendirme, setMutfakYonlendirme] = useState<MutfakYonlendirmeBilgisi | null>(null);
   const { okunmamisSayisi: okunmamisBildirimSayisi } = usePatronBildirimleri();
 
   const bildirimSekmesineGit = (sekme: string, hedef?: BildirimYonlendirmeHedefi) => {
@@ -64,9 +70,15 @@ export const YonetimPaneli: React.FC = () => {
     setMobilMenuAcik(false);
     if (sekme === 'gel_al_subeleri' && hedef?.altSekme) {
       setSubeYonlendirme({
-        altSekme: hedef.altSekme,
+        altSekme: hedef.altSekme as SubeYonlendirmeBilgisi['altSekme'],
         subeId: hedef.subeId,
         metinIpucu: hedef.metinIpucu,
+        anahtar: Date.now(),
+      });
+    }
+    if (sekme === 'mutfaklar' && hedef?.altSekme) {
+      setMutfakYonlendirme({
+        altSekme: hedef.altSekme as MutfakYonlendirmeBilgisi['altSekme'],
         anahtar: Date.now(),
       });
     }
@@ -78,6 +90,12 @@ export const YonetimPaneli: React.FC = () => {
       baslik: 'Mutfak & Hakediş',
       ikon: Store,
       rozet: bekleyenHakedisSayisi > 0 ? `${bekleyenHakedisSayisi} Bekleyen` : undefined
+    },
+    {
+      id: 'mutfak_afisleri',
+      baslik: 'Mutfak Afiş Onayları',
+      ikon: Megaphone,
+      rozet: bekleyenAfisSayisi > 0 ? `${bekleyenAfisSayisi} Bekleyen` : undefined
     },
     { id: 'siparisler', baslik: 'Sipariş & Ciro Takibi', ikon: ShoppingBag },
     { id: 'kuryeler', baslik: 'Kurye & Rota', ikon: Bike },
@@ -94,6 +112,7 @@ export const YonetimPaneli: React.FC = () => {
   const baslikGetir = () => {
     switch (aktifSekme) {
       case 'mutfaklar': return 'Mutfak Yönetimi, Hakediş & Toplu Ödeme Merkezi';
+      case 'mutfak_afisleri': return 'Mutfak Afiş Onayları — Vitrin Duyuru Kontrol Masası';
       case 'siparisler': return 'Canlı Sipariş Sevk ve Ciro Takip Masası';
       case 'kuryeler': return 'Kurye Operasyonları, Rota ve KM Fiyatlandırma';
       case 'yemekler': return 'Menü, Kategori ve Varyasyon Yönetimi';
@@ -280,7 +299,8 @@ export const YonetimPaneli: React.FC = () => {
         </header>
 
         <main className="flex-1 p-4 lg:p-8">
-          {aktifSekme === 'mutfaklar' && <YonetimMutfaklar />}
+          {aktifSekme === 'mutfaklar' && <YonetimMutfaklar mutfakYonlendirme={mutfakYonlendirme} />}
+          {aktifSekme === 'mutfak_afisleri' && <YonetimMutfakAfisleri />}
           {aktifSekme === 'siparisler' && <YonetimSiparisBirlesik />}
           {aktifSekme === 'kuryeler' && <YonetimKuryeBirlesik />}
           {aktifSekme === 'yemekler' && <YonetimMenuBirlesik />}

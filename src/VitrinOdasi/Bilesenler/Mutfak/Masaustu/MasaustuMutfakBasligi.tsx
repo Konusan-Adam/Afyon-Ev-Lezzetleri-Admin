@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Star, Clock, Bike, ShieldCheck, Heart, Share2, Check } from 'lucide-react';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { useKuryeAyarlari } from '@/src/MalzemeCekmeceleri/useKuryeAyarlari';
+import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 
 export const MasaustuMutfakBasligi: React.FC<{ mutfak: Mutfak }> = ({ mutfak }) => {
   const [favoride, setFavoride] = useState(false);
@@ -22,8 +23,8 @@ export const MasaustuMutfakBasligi: React.FC<{ mutfak: Mutfak }> = ({ mutfak }) 
     <div className="bg-[#240E2A] rounded-2xl border border-purple-900/50 shadow-xl p-4 mb-4 flex items-center justify-between gap-4">
       {/* Sol: Küçük Marka Logosu & Mutfak Künyesi */}
       <div className="flex items-center gap-4 min-w-0">
-        <div className="relative w-16 h-16 shrink-0 rounded-2xl overflow-hidden border-2 border-amber-500/50 shadow-md bg-purple-950">
-          <img src={mutfak.gorsel_url} alt={mutfak.ad} className="w-full h-full object-cover" />
+        <div className="relative w-16 h-16 shrink-0 rounded-2xl overflow-hidden border-2 border-amber-500/50 shadow-md bg-[#1D0A20]">
+          <img src={RESMI_MUTFAK_LOGOSU} alt={mutfak.ad} className="w-full h-full object-cover" />
         </div>
 
         <div className="min-w-0">

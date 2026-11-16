@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { koleksiyonGetir, koleksiyonuCanliDinle, canliFirebaseAktifMi } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { mutfakGorseliniSabitle } from './resmiMutfakLogosu';
 
 export function mutfakOnayliMi(m: any): boolean {
   if (!m) return false;
@@ -25,13 +26,13 @@ export function mutfaklariGetir() {
         if (canliFirebaseAktifMi()) {
           const fbMutfaklar = await koleksiyonGetir<Mutfak>('mutfaklar');
           if (!iptal) {
-            setMutfaklar(fbMutfaklar.filter(mutfakOnayliMi));
+            setMutfaklar(fbMutfaklar.filter(mutfakOnayliMi).map(mutfakGorseliniSabitle));
             setYukleniyor(false);
           }
 
           dinlemeDurdur = koleksiyonuCanliDinle<Mutfak>('mutfaklar', (guncelMutfaklar) => {
             if (!iptal && guncelMutfaklar) {
-              setMutfaklar(guncelMutfaklar.filter(mutfakOnayliMi));
+              setMutfaklar(guncelMutfaklar.filter(mutfakOnayliMi).map(mutfakGorseliniSabitle));
             }
           });
         }

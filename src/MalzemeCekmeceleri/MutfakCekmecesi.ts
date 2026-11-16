@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MutfakTipi } from '@/src/veritabani/VeriTipleri';
 import { koleksiyonGetir, koleksiyonuCanliDinle, canliFirebaseAktifMi } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { mutfakGorseliniSabitle } from './Mutfak/resmiMutfakLogosu';
 
 export const useMutfaklar = () => {
   const [mutfaklar, setMutfaklar] = useState<MutfakTipi[]>([]);
@@ -11,13 +12,15 @@ export const useMutfaklar = () => {
     let dinlemeDurdur = () => {};
 
     const onayliSüz = (liste: MutfakTipi[]) => {
-      return (liste || []).filter((m: any) => {
-        if (!m) return false;
-        if (m.askida_mi === true) return false;
-        if (m.onay_durumu === 'reddedildi') return false;
-        if (m.onayli_mi === false) return false;
-        return true;
-      });
+      return (liste || [])
+        .filter((m: any) => {
+          if (!m) return false;
+          if (m.askida_mi === true) return false;
+          if (m.onay_durumu === 'reddedildi') return false;
+          if (m.onayli_mi === false) return false;
+          return true;
+        })
+        .map(mutfakGorseliniSabitle);
     };
 
     const veriGetir = async () => {

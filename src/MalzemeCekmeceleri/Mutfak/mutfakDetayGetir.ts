@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { mutfakGorseliniSabitle } from './resmiMutfakLogosu';
 
 export function mutfakDetayGetir(mutfakId?: string) {
   const [mutfak, setMutfak] = useState<Mutfak | null>(null);
@@ -22,7 +23,7 @@ export function mutfakDetayGetir(mutfakId?: string) {
         const tumMutfaklar = await koleksiyonGetir<Mutfak>('mutfaklar');
         const bulunan = tumMutfaklar.find((m) => m.id === mutfakId);
         if (!iptal) {
-          setMutfak(bulunan || null);
+          setMutfak(bulunan ? mutfakGorseliniSabitle(bulunan) : null);
           setYukleniyor(false);
         }
       } catch (err) {

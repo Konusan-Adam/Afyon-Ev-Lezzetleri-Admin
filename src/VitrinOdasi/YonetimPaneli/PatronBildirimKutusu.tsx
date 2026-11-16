@@ -14,7 +14,8 @@ import {
   Volume2,
   X,
   RefreshCw,
-  Clock
+  Clock,
+  Megaphone
 } from 'lucide-react';
 import { 
   usePatronBildirimleri,
@@ -24,7 +25,7 @@ import {
 
 export interface BildirimYonlendirmeHedefi {
   sekme: string;
-  altSekme?: 'genel_bakis' | 'stoklar' | 'siparisler';
+  altSekme?: 'genel_bakis' | 'stoklar' | 'siparisler' | 'ev_mutfaklari' | 'mutfak_afisleri' | 'hakedisler_odemeler';
   subeId?: string;
   metinIpucu?: string;
 }
@@ -40,7 +41,7 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
   onKapat,
   onSekmeSec 
 }) => {
-  const { bildirimler, okunduIsaretle, bildirimSil: hookBildirimSil, zilSesiCal } = usePatronBildirimleri();
+  const { bildirimler, okunduIsaretle, tekOkunduIsaretle, bildirimSil: hookBildirimSil, zilSesiCal } = usePatronBildirimleri();
   const [izinDurumu, setIzinDurumu] = React.useState<NotificationPermission | 'desteklenmiyor'>(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission;
@@ -70,8 +71,29 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
   };
 
   const bildirimeTiklandi = (b: PatronBildirimi) => {
+    tekOkunduIsaretle(b.id);
     if (onSekmeSec) {
       const baslikKucuk = (b.baslik || '').toLocaleLowerCase('tr-TR');
+      const detayKucuk = (b.detay || '').toLocaleLowerCase('tr-TR');
+
+      const afisBildirimiMi =
+        b.hedefSekme === 'mutfak_afisleri' ||
+        b.tur === 'mutfak_afis_talebi' ||
+        baslikKucuk.includes('afiş') ||
+        baslikKucuk.includes('afis') ||
+        detayKucuk.includes('afiş') ||
+        detayKucuk.includes('afis');
+
+      if (afisBildirimiMi) {
+        onSekmeSec('mutfak_afisleri', {
+          sekme: 'mutfak_afisleri',
+          altSekme: 'mutfak_afisleri',
+          metinIpucu: b.ilgiliKimlik || `${b.baslik || ''} ${b.detay || ''}`.trim(),
+        });
+        onKapat();
+        return;
+      }
+
       const subeBildirimiMi =
         b.hedefSekme === 'sube_siparisleri' ||
         baslikKucuk.includes('şube') ||
@@ -88,10 +110,41 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
         return;
       }
 
+      const hakedisBildirimiMi =
+        b.tur === 'hakedis_talebi' ||
+        baslikKucuk.includes('hakediş') ||
+        baslikKucuk.includes('hakedis');
+
+      if (hakedisBildirimiMi) {
+        onSekmeSec('mutfaklar', {
+          sekme: 'mutfaklar',
+          altSekme: 'hakedisler_odemeler',
+          metinIpucu: b.ilgiliKimlik,
+        });
+        onKapat();
+        return;
+      }
+
+      const mutfakBelgeBildirimiMi =
+        b.hedefSekme === 'mutfaklar' ||
+        b.tur === 'yeni_mutfak' ||
+        b.tur === 'eksik_belge' ||
+        baslikKucuk.includes('belge') ||
+        baslikKucuk.includes('hijyen') ||
+        baslikKucuk.includes('muafiyet');
+
+      if (mutfakBelgeBildirimiMi) {
+        onSekmeSec('mutfaklar', {
+          sekme: 'mutfaklar',
+          altSekme: 'ev_mutfaklari',
+          metinIpucu: b.ilgiliKimlik,
+        });
+        onKapat();
+        return;
+      }
+
       if (b.tur === 'yeni_siparis' || b.tur === 'iade_talebi' || b.tur === 'siparis_durumu' || b.tur === 'genel') {
         onSekmeSec('siparisler');
-      } else if (b.tur === 'yeni_mutfak' || b.tur === 'eksik_belge' || b.tur === 'hakedis_talebi') {
-        onSekmeSec('mutfaklar');
       } else if (b.tur === 'yeni_kurye') {
         onSekmeSec('kuryeler');
       } else if (b.tur === 'yeni_musteri') {
@@ -103,8 +156,12 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
     onKapat();
   };
 
-  const ikonGetir = (tur: string) => {
-    switch (tur) {
+  const ikonGetir = (b: PatronBildirimi) => {
+    const baslikKucuk = (b.baslik || '').toLocaleLowerCase('tr-TR');
+    if (b.tur === 'mutfak_afis_talebi' || b.hedefSekme === 'mutfak_afisleri' || baslikKucuk.includes('afiş') || baslikKucuk.includes('afis')) {
+      return <Megaphone className="w-4 h-4 text-amber-400" />;
+    }
+    switch (b.tur) {
       case 'yeni_musteri': return <Users className="w-4 h-4 text-sky-400" />;
       case 'yeni_mutfak': return <Store className="w-4 h-4 text-amber-400" />;
       case 'yeni_kurye': return <Bike className="w-4 h-4 text-emerald-400" />;
@@ -201,7 +258,7 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
               }`}
             >
               <div className="p-2 rounded-xl bg-[#120415] border border-purple-900/60 shrink-0 mt-0.5">
-                {ikonGetir(b.tur)}
+                {ikonGetir(b)}
               </div>
 
               <div className="flex-1 min-w-0">

@@ -10,6 +10,7 @@ import {
 export type PatronBildirimTuru = 
   | 'yeni_musteri'
   | 'yeni_mutfak'
+  | 'mutfak_afis_talebi'
   | 'yeni_kurye'
   | 'yeni_yemek'
   | 'iade_talebi'
@@ -226,6 +227,22 @@ export const patronBildirimleriniOkunduIsaretle = (): void => {
   } catch {}
 };
 
+export const tekPatronBildirimiOkunduIsaretle = (id: string): void => {
+  try {
+    const mevcut = patronBildirimleriniGetir();
+    const guncel = mevcut.map(b => (b.id === id ? { ...b, okundu_mu: true } : b));
+    localStorage.setItem(YEREL_PATRON_BILDIRIMLERI_KEY, JSON.stringify(guncel));
+
+    if (canliFirebaseAktifMi()) {
+      belgeKaydet('patron_bildirimleri', id, { okundu_mu: true }).catch(() => {});
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('afyon_patron_yeni_bildirim', { detail: null }));
+    }
+  } catch {}
+};
+
 export const patronBildirimiSil = (id: string): void => {
   try {
     const mevcut = patronBildirimleriniGetir();
@@ -317,6 +334,7 @@ export function usePatronBildirimleri() {
     bildirimler,
     okunmamisSayisi,
     okunduIsaretle: patronBildirimleriniOkunduIsaretle,
+    tekOkunduIsaretle: tekPatronBildirimiOkunduIsaretle,
     bildirimSil: patronBildirimiSil,
     zilSesiCal: patronZilSesiCal
   };

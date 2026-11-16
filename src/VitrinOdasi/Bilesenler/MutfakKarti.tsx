@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, Clock, ShieldCheck } from 'lucide-react';
 import { MutfakTipi } from '@/src/veritabani/VeriTipleri';
+import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 
 interface Props {
   mutfak: MutfakTipi;
@@ -9,9 +10,9 @@ interface Props {
 export const MutfakKarti: React.FC<Props> = ({ mutfak }) => {
   return (
     <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
-      <div className="h-40 w-full relative overflow-hidden bg-stone-100">
+      <div className="h-40 w-full relative overflow-hidden bg-[#1D0A20]">
         <img
-          src={mutfak.gorsel_url}
+          src={RESMI_MUTFAK_LOGOSU}
           alt={mutfak.ad}
           className="w-full h-full object-cover"
           loading="lazy"

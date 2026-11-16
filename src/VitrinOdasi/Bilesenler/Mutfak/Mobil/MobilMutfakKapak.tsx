@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Info, Share2, Heart, Check, Sparkles, Star } from 'lucide-react';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
+import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 
 interface MobilMutfakKapakOzellikleri {
   mutfak: Mutfak;
@@ -36,12 +37,8 @@ export const MobilMutfakKapak: React.FC<MobilMutfakKapakOzellikleri> = ({
   return (
     <header className="relative w-full">
       {/* Kapak Görseli */}
-      <div className="relative h-44 w-full bg-[#2A0F33] overflow-visible">
-        {mutfak.gorsel_url ? (
-          <img src={mutfak.gorsel_url} alt={mutfak.ad} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-b from-[#3B1448] to-[#1D0823]" />
-        )}
+      <div className="relative h-44 w-full bg-[#1D0A20] overflow-visible">
+        <img src={RESMI_MUTFAK_LOGOSU} alt={mutfak.ad} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-[#120415]" />
 
         {/* Üst Butonlar Barı */}
@@ -87,12 +84,8 @@ export const MobilMutfakKapak: React.FC<MobilMutfakKapakOzellikleri> = ({
 
         {/* Ortalanmış Logo / Avatar */}
         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-20">
-          <div className="w-20 h-20 rounded-2xl bg-[#2D0F35] border-2 border-purple-500/50 shadow-2xl overflow-hidden flex items-center justify-center">
-            {mutfak.gorsel_url ? (
-              <img src={mutfak.gorsel_url} alt={mutfak.ad} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-xl font-black text-amber-400">{mutfak.ad?.substring(0, 2).toUpperCase() || '??'}</span>
-            )}
+          <div className="w-20 h-20 rounded-2xl bg-[#1D0A20] border-2 border-amber-500/50 shadow-2xl overflow-hidden flex items-center justify-center">
+            <img src={RESMI_MUTFAK_LOGOSU} alt={mutfak.ad} className="w-full h-full object-cover" />
           </div>
         </div>
       </div>

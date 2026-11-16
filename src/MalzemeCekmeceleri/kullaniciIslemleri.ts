@@ -8,6 +8,7 @@ import {
 } from '@/src/veritabani/CanliVeriYardimcisi';
 import { telefonGecerliMi } from '@/src/MalzemeCekmeceleri';
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
+import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 
 function telefonTemizle(tel: string): string {
   const rakamlar = tel.replace(/\D/g, '');
@@ -101,7 +102,7 @@ export async function veritabaninaKullaniciKaydet(
           min_siparis_tutari: 100,
           teslimat_ucreti: 25,
           puan: 5.0,
-          gorsel_url: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
+          gorsel_url: RESMI_MUTFAK_LOGOSU,
           sahip_id: kimlikId,
           onayli_mi: false, // Patron onayı bekliyor!
           onay_durumu: 'beklemede',
