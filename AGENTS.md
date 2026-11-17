@@ -10,6 +10,13 @@ Bu belge, **Afyon Ev Lezzetleri** projesinde görev alacak yapay zeka (AI) geli�
 * Sistemde tespit edilen hatalar veya yapılması gereken değişiklikler için **doğrudan kod müdahalesi yapılmayacaktır.**
 * Önce durum analiz edilecek, teknik jargondan uzak, net ve sade bir dille Abi'ye raporlanacaktır. Kendisinden onay alındıktan sonra geliştirme aşamasına geçilecektir.
 
+### İşlem Öncesi Kısa Ön Bilgi Verme Kuralı (Sistem Çorba Olmasın)
+* Yapay zeka ajanları herhangi bir dosyada değişiklik veya kod müdahalesi yapmadan önce, ne yapacağını ve hangi dosyayı etkileyeceğini **1-2 cümlelik çok kısa ve net bir ön bilgiyle Abi'ye bildirecektir.** Habersiz ve kontrolsüz işlem kesinlikle yasaktır.
+
+### Kesin Sistem ve Rol Ayrımı (Müşteri & Yönetim İzolasyonu)
+* Sistem iki ana dünyaya ayrılmıştır: **Müşteri Dünyası** ve **Yönetim/Operasyon Dünyası** (Ev Mutfağı, Ticari Restoran, Kurye, Admin/Patron).
+* Müşteri kayıt, giriş ve vitrin akışlarına diğer roller (Mutfak, Restoran, Kurye vb.) kesinlikle karıştırılmayacak; roller ve arayüzler birbirinden tamamen izole tutulacaktır.
+
 ### %100 Türkçe Kodlama Standardı
 * Proje genelinde kafa karışıklığını önlemek adına **tüm yeni klasör isimleri, dosya isimleri, değişken ve fonksiyon isimleri tamamen Türkçe** olacaktır. 
 
@@ -33,7 +40,7 @@ Projenin dizin mimarisi, sorumlulukların tam olarak ayrılması amacıyla **4 a
 
 ### 2. Malzeme Çekmeceleri (`src/MalzemeCekmeceleri/` - Hooks)
 * Görsel arayüzü olmayan, arka planda veri transferini yöneten işçiler odasıdır. 
-* Supabase entegrasyonu ve veri çekme işlemleri bu odada, her iş grubu için ayrı bir Türkçe dosya altında toplanır. Test modunda veriyi doğrudan `GeciciTestDeposu.ts` üzerinden çeker.
+* Supabase/Firestore entegrasyonu ve veri çekme işlemleri bu odada, her iş grubu için ayrı bir Türkçe dosya altında toplanır. Test modunda veriyi doğrudan `GeciciTestDeposu.ts` üzerinden çeker.
 
 ### 3. Ortak Havuz (`src/OrtakHavuz/` - Context)
 * Sayfa değişikliklerinde dükkanın hafızasında kalması gereken küresel durumları yönetir. Kullanıcı oturum bilgileri ve müşteri sepeti gibi büyük operasyonlar burada saklanır.
