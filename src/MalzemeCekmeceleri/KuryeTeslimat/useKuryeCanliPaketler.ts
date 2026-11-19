@@ -2,9 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonuCanliDinle, koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyonServisi';
 import { yerelSiparisleriGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
-import { kuryePaketiUzerineAl, kuryePaketiTeslimAldi, kuryePinDogrulaVeTeslimEt, kuryeZamanAsimiKontrolEt } from './KuryePinServisi';
+import {
+  kuryePaketiUzerineAl,
+  kuryePaketiTeslimAldi,
+  kuryePinDogrulaVeTeslimEt,
+  kuryeSiparisiIptalEt,
+  kuryeZamanAsimiKontrolEt
+} from './KuryePinServisi';
 
-export const useKuryeCanliPaketler = (kuryeId: string, kuryeAdi: string) => {
+export const useKuryeCanliPaketler = (
+  kuryeId: string,
+  kuryeAdi: string,
+  kuryeTelefon: string = ''
+) => {
   const [paketler, setPaketler] = useState<any[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
 
@@ -73,8 +83,14 @@ export const useKuryeCanliPaketler = (kuryeId: string, kuryeAdi: string) => {
     };
   }, [yenile]);
 
-  const paketiAl = async (siparisId: string) => {
-    const sonuc = await kuryePaketiUzerineAl(siparisId, kuryeId, kuryeAdi);
+  const paketiAl = async (siparisId: string, tahminiDakika: number = 15) => {
+    const sonuc = await kuryePaketiUzerineAl(
+      siparisId,
+      kuryeId,
+      kuryeAdi,
+      kuryeTelefon,
+      tahminiDakika
+    );
     await yenile();
     return sonuc;
   };
@@ -87,6 +103,12 @@ export const useKuryeCanliPaketler = (kuryeId: string, kuryeAdi: string) => {
 
   const teslimEt = async (siparisKodu: string, pin: string) => {
     const sonuc = await kuryePinDogrulaVeTeslimEt(siparisKodu, pin);
+    await yenile();
+    return sonuc;
+  };
+
+  const siparisiIptalEt = async (siparisId: string, gerekce: string) => {
+    const sonuc = await kuryeSiparisiIptalEt(siparisId, kuryeId, kuryeAdi, gerekce);
     await yenile();
     return sonuc;
   };
@@ -121,5 +143,14 @@ export const useKuryeCanliPaketler = (kuryeId: string, kuryeAdi: string) => {
     return tamamlandi && p.kurye_id === kuryeId;
   });
 
-  return { paketler, aktifPaketler, teslimEdilenler, yukleniyor, paketiAl, paketiTeslimAldiBildir, teslimEt };
+  return {
+    paketler,
+    aktifPaketler,
+    teslimEdilenler,
+    yukleniyor,
+    paketiAl,
+    paketiTeslimAldiBildir,
+    teslimEt,
+    siparisiIptalEt
+  };
 };

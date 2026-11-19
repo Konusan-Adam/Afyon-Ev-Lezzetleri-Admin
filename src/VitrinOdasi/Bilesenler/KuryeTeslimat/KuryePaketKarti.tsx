@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Store, User, Bike, Check, KeyRound, QrCode, MapPin, Lock, Clock, AlertTriangle } from 'lucide-react';
+import { Store, User, Bike, Check, KeyRound, QrCode, MapPin, Lock, Clock, Ban, X } from 'lucide-react';
 
 interface Props {
   paket: any;
   kuryeId: string;
-  onPaketAl: (id: string) => void;
+  onPaketAl: (id: string, tahminiDakika?: number) => void;
   onPaketiTeslimAldi: (id: string) => void;
   onTeslimEt: (kod: string, pin: string) => void;
+  onSiparisiIptalEt?: (id: string, gerekce: string) => void;
   onQrAc?: (kod: string) => void;
   onHaritaAc?: (paket: any) => void;
 }
+
+const KURYE_IPTAL_SEBEPLERI = [
+  'Müşteriye ulaşılamıyor',
+  'Teslimat adresi eksik / hatalı',
+  'Araç arızası / yol durumu',
+  'Mutfakta paket hazır değil / gecikme',
+];
 
 export const KuryePaketKarti: React.FC<Props> = ({
   paket,
@@ -17,11 +25,15 @@ export const KuryePaketKarti: React.FC<Props> = ({
   onPaketAl,
   onPaketiTeslimAldi,
   onTeslimEt,
+  onSiparisiIptalEt,
   onQrAc,
   onHaritaAc,
 }) => {
   const [pinGirdisi, setPinGirdisi] = useState('');
   const [pinAcik, setPinAcik] = useState(false);
+  const [tahminiDakika, setTahminiDakika] = useState<number>(Number(paket.kurye_tahmini_dakika) || 15);
+  const [iptalAcik, setIptalAcik] = useState(false);
+  const [iptalGerekcesi, setIptalGerekcesi] = useState(KURYE_IPTAL_SEBEPLERI[0]);
   const [kalanSaniye, setKalanSaniye] = useState<number>(300); // 5 Dakika (300 sn)
 
   const benimPaketim = paket.kurye_id === kuryeId;
@@ -148,33 +160,57 @@ export const KuryePaketKarti: React.FC<Props> = ({
         </span>
 
         {!benimPaketim ? (
-          <button
-            type="button"
-            onClick={() => onPaketAl(paket.id)}
-            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all active:scale-95"
-          >
-            <Bike className="w-3.5 h-3.5" />
-            <span>Paketi Kabul Et & Al</span>
-          </button>
-        ) : !teslimAldiMi ? (
-          /* 📦 KURYENIN PAKETİ TESLİM ALDIM BUTONU (MUTFAK ONAYI ZORUNLU) */
-          mutfakTeslimEttiMi ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={tahminiDakika}
+              onChange={(e) => setTahminiDakika(Number(e.target.value) || 15)}
+              className="bg-[#14071A] border border-purple-700/70 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-amber-300 focus:outline-none focus:border-amber-400"
+              title="Tahmini varış süresi"
+            >
+              <option value={10}>~10 dk</option>
+              <option value={15}>~15 dk</option>
+              <option value={20}>~20 dk</option>
+              <option value={30}>~30 dk</option>
+            </select>
             <button
               type="button"
-              onClick={() => onPaketiTeslimAldi(paket.id)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 cursor-pointer transition-all border border-emerald-400/50 active:scale-95 animate-pulse"
+              onClick={() => onPaketAl(paket.id, tahminiDakika)}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all active:scale-95"
             >
-              <Check className="w-4 h-4 text-emerald-200" />
-              <span>📦 PAKETİ TESLİM ALDIM (Adresi Aç)</span>
+              <Bike className="w-3.5 h-3.5" />
+              <span>Paketi Kabul Et & Al</span>
             </button>
-          ) : (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[11px] font-bold">
-              <Clock className="w-3.5 h-3.5 animate-spin" />
-              <span>Mutfağın "Kuryeye Teslim Edildi" demesi bekleniyor...</span>
-            </div>
-          )
+          </div>
+        ) : !teslimAldiMi ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            {mutfakTeslimEttiMi ? (
+              <button
+                type="button"
+                onClick={() => onPaketiTeslimAldi(paket.id)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 cursor-pointer transition-all border border-emerald-400/50 active:scale-95 animate-pulse"
+              >
+                <Check className="w-4 h-4 text-emerald-200" />
+                <span>📦 PAKETİ TESLİM ALDIM (Adresi Aç)</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[11px] font-bold">
+                <Clock className="w-3.5 h-3.5 animate-spin" />
+                <span>Mutfağın "Kuryeye Teslim Edildi" demesi bekleniyor...</span>
+              </div>
+            )}
+            {onSiparisiIptalEt && (
+              <button
+                type="button"
+                onClick={() => setIptalAcik(!iptalAcik)}
+                className="px-3 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-700/60 text-rose-200 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                <span>İptal</span>
+              </button>
+            )}
+          </div>
         ) : !pinAcik ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => onQrAc?.(paketKodu)}
@@ -191,6 +227,16 @@ export const KuryePaketKarti: React.FC<Props> = ({
               <KeyRound className="w-3.5 h-3.5" />
               <span>PIN Gir</span>
             </button>
+            {onSiparisiIptalEt && (
+              <button
+                type="button"
+                onClick={() => setIptalAcik(!iptalAcik)}
+                className="px-3 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-700/60 text-rose-200 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                <span>İptal</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
@@ -222,6 +268,67 @@ export const KuryePaketKarti: React.FC<Props> = ({
           </div>
         )}
       </div>
+
+      {/* Kurye Sipariş İptal Alanı (iptal_kaynagi: 'kurye') */}
+      {iptalAcik && onSiparisiIptalEt && (
+        <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-500/50 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-rose-200 flex items-center gap-1.5">
+              <Ban className="w-3.5 h-3.5 text-rose-400" />
+              Siparişi İptal Et (#{paketKodu})
+            </span>
+            <button
+              type="button"
+              onClick={() => setIptalAcik(false)}
+              className="text-rose-300 hover:text-white cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {KURYE_IPTAL_SEBEPLERI.map((sebep) => (
+              <button
+                key={sebep}
+                type="button"
+                onClick={() => setIptalGerekcesi(sebep)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-semibold border cursor-pointer ${
+                  iptalGerekcesi === sebep
+                    ? 'bg-rose-600 border-rose-400 text-white'
+                    : 'bg-[#180A1F] border-rose-900/60 text-rose-200/80'
+                }`}
+              >
+                {sebep}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={iptalGerekcesi}
+            onChange={(e) => setIptalGerekcesi(e.target.value)}
+            placeholder="İptal gerekçesi yazın..."
+            className="w-full bg-[#120415] border border-rose-800/70 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-rose-400"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIptalAcik(false)}
+              className="px-3 py-1 rounded-lg bg-purple-950 text-gray-300 text-[11px] font-bold cursor-pointer"
+            >
+              Vazgeç
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onSiparisiIptalEt(paket.id, iptalGerekcesi);
+                setIptalAcik(false);
+              }}
+              className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold cursor-pointer"
+            >
+              İptali Onayla
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

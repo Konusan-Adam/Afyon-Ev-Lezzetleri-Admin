@@ -25,7 +25,14 @@ import {
 
 export interface BildirimYonlendirmeHedefi {
   sekme: string;
-  altSekme?: 'genel_bakis' | 'stoklar' | 'siparisler' | 'ev_mutfaklari' | 'mutfak_afisleri' | 'hakedisler_odemeler';
+  altSekme?:
+    | 'genel_bakis'
+    | 'stoklar'
+    | 'siparisler'
+    | 'ev_mutfaklari'
+    | 'mutfak_afisleri'
+    | 'hakedisler_odemeler'
+    | 'coklu_menuler';
   subeId?: string;
   metinIpucu?: string;
 }
@@ -137,6 +144,23 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
         onSekmeSec('mutfaklar', {
           sekme: 'mutfaklar',
           altSekme: 'ev_mutfaklari',
+          metinIpucu: b.ilgiliKimlik,
+        });
+        onKapat();
+        return;
+      }
+
+      const cokluMenuBildirimiMi =
+        b.hedefSekme === 'coklu_menuler' ||
+        baslikKucuk.includes('çoklu menü') ||
+        baslikKucuk.includes('coklu menu') ||
+        detayKucuk.includes('çoklu menü') ||
+        detayKucuk.includes('coklu menu');
+
+      if (cokluMenuBildirimiMi) {
+        onSekmeSec('yemekler', {
+          sekme: 'yemekler',
+          altSekme: 'coklu_menuler',
           metinIpucu: b.ilgiliKimlik,
         });
         onKapat();

@@ -25,11 +25,12 @@ import { type SubeYonlendirmeBilgisi } from '../PatronMasasi/SubeYonetimi/SubeYo
 import { usePatronBildirimleri } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { useCanliHakedisTalepleri } from '@/src/MalzemeCekmeceleri/useCanliHakedisTalepleri';
 import { useCanliMutfakAfisleri } from '@/src/MalzemeCekmeceleri/useCanliMutfakAfisleri';
+import { useCanliCokluMenuler } from '@/src/MalzemeCekmeceleri/useCanliCokluMenuler';
 import { YonetimMutfaklar, type MutfakYonlendirmeBilgisi } from './YonetimMutfaklar';
 import { YonetimMutfakAfisleri } from './YonetimMutfaklar/YonetimMutfakAfisleri';
 import { YonetimSiparisBirlesik } from './YonetimSiparisBirlesik';
 import { YonetimKuryeBirlesik } from './YonetimKuryeBirlesik';
-import { YonetimMenuBirlesik } from './YonetimMenuBirlesik';
+import { YonetimMenuBirlesik, type MenuYonlendirmeBilgisi } from './YonetimMenuBirlesik';
 import { FaturaMerkezi } from './FaturaYonetimi/FaturaMerkezi';
 import { YonetimKomisyonlar } from './YonetimKomisyonlar';
 import { YonetimOzetBirlesik } from './YonetimOzetBirlesik';
@@ -58,11 +59,13 @@ export const YonetimPaneli: React.FC = () => {
   const [mobilMenuAcik, setMobilMenuAcik] = useState<boolean>(false);
   const { talepler } = useCanliHakedisTalepleri();
   const { bekleyenSayisi: bekleyenAfisSayisi } = useCanliMutfakAfisleri();
+  const { bekleyenSayisi: bekleyenCokluMenuSayisi } = useCanliCokluMenuler();
 
   const bekleyenHakedisSayisi = talepler.filter(t => t.durum === 'beklemede').length;
   const [bildirimKutusuAcik, setBildirimKutusuAcik] = useState(false);
   const [subeYonlendirme, setSubeYonlendirme] = useState<SubeYonlendirmeBilgisi | null>(null);
   const [mutfakYonlendirme, setMutfakYonlendirme] = useState<MutfakYonlendirmeBilgisi | null>(null);
+  const [menuYonlendirme, setMenuYonlendirme] = useState<MenuYonlendirmeBilgisi | null>(null);
   const { okunmamisSayisi: okunmamisBildirimSayisi } = usePatronBildirimleri();
 
   const bildirimSekmesineGit = (sekme: string, hedef?: BildirimYonlendirmeHedefi) => {
@@ -79,6 +82,12 @@ export const YonetimPaneli: React.FC = () => {
     if (sekme === 'mutfaklar' && hedef?.altSekme) {
       setMutfakYonlendirme({
         altSekme: hedef.altSekme as MutfakYonlendirmeBilgisi['altSekme'],
+        anahtar: Date.now(),
+      });
+    }
+    if (sekme === 'yemekler' && hedef?.altSekme) {
+      setMenuYonlendirme({
+        altSekme: hedef.altSekme as MenuYonlendirmeBilgisi['altSekme'],
         anahtar: Date.now(),
       });
     }
@@ -99,7 +108,12 @@ export const YonetimPaneli: React.FC = () => {
     },
     { id: 'siparisler', baslik: 'Sipariş & Ciro Takibi', ikon: ShoppingBag },
     { id: 'kuryeler', baslik: 'Kurye & Rota', ikon: Bike },
-    { id: 'yemekler', baslik: 'Menü, Kategori & Varyasyon', ikon: UtensilsCrossed },
+    {
+      id: 'yemekler',
+      baslik: 'Menü, Kategori & Varyasyon',
+      ikon: UtensilsCrossed,
+      rozet: bekleyenCokluMenuSayisi > 0 ? `${bekleyenCokluMenuSayisi} Çoklu Menü` : undefined
+    },
     { id: 'fatura', baslik: 'Fatura Yönetimi', ikon: FileText, rozet: 'E-Arşiv' },
     { id: 'komisyonlar', baslik: 'Komisyon Yönetimi', ikon: Percent },
     { id: 'ozet', baslik: 'Genel Özet & Raporlar', ikon: BarChart3 },
@@ -303,7 +317,7 @@ export const YonetimPaneli: React.FC = () => {
           {aktifSekme === 'mutfak_afisleri' && <YonetimMutfakAfisleri />}
           {aktifSekme === 'siparisler' && <YonetimSiparisBirlesik />}
           {aktifSekme === 'kuryeler' && <YonetimKuryeBirlesik />}
-          {aktifSekme === 'yemekler' && <YonetimMenuBirlesik />}
+          {aktifSekme === 'yemekler' && <YonetimMenuBirlesik menuYonlendirme={menuYonlendirme} />}
           {aktifSekme === 'fatura' && <FaturaMerkezi />}
           {aktifSekme === 'komisyonlar' && <YonetimKomisyonlar />}
           {aktifSekme === 'ozet' && <YonetimOzetBirlesik />}

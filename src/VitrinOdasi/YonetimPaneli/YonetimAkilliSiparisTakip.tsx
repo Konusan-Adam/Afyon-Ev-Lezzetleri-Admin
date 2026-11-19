@@ -14,6 +14,7 @@ interface SiparisRaporKaydi {
   odemeYontemi: string;
   tarih: string;
   iptalGerekcesi?: string;
+  iptalKaynagi?: string;
 }
 
 export const YonetimAkilliSiparisTakip: React.FC = () => {
@@ -36,7 +37,8 @@ export const YonetimAkilliSiparisTakip: React.FC = () => {
         durum: s.durum || 'hazirlaniyor',
         odemeYontemi: s.odeme_yontemi || s.odemeYontemi || 'kapida_nakit',
         tarih: s.olusturma_tarihi || new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-        iptalGerekcesi: s.iptal_gerekcesi || s.iptalGerekcesi
+        iptalGerekcesi: s.iptal_gerekcesi || s.iptalGerekcesi,
+        iptalKaynagi: s.iptal_kaynagi
       }));
       setSiparisler(formatli);
     });
@@ -207,7 +209,7 @@ export const YonetimAkilliSiparisTakip: React.FC = () => {
                       )}
                       {(sip.durum === 'iptal' || sip.durum === 'iade') && (
                         <span className="bg-rose-950/60 border border-rose-500/40 text-rose-300 px-2.5 py-1 rounded-full text-[11px] font-bold" title={sip.iptalGerekcesi}>
-                          İptal / İade {sip.iptalGerekcesi ? `(${sip.iptalGerekcesi})` : ''}
+                          İptal / İade{sip.iptalKaynagi ? ` [${sip.iptalKaynagi}]` : ''} {sip.iptalGerekcesi ? `(${sip.iptalGerekcesi})` : ''}
                         </span>
                       )}
                     </td>

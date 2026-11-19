@@ -84,8 +84,14 @@
         "teslimat_adresi_metni": { "type": "string", "maxLength": 500 },
         "mutfak_id": { "type": "string", "maxLength": 64 },
         "kurye_id": { "type": "string", "maxLength": 64 },
+        "kurye_adi": { "type": "string", "maxLength": 100 },
+        "kurye_telefon": { "type": "string", "maxLength": 30 },
+        "kurye_tahmini_dakika": { "type": "number" },
         "durum": { "type": "string", "maxLength": 50 },
         "durum_aciklamasi": { "type": "string", "maxLength": 200 },
+        "iptal_kaynagi": { "type": "string", "maxLength": 30 },
+        "iptal_gerekcesi": { "type": "string", "maxLength": 300 },
+        "stok_dusuldu_mu": { "type": "boolean" },
         "toplam_tutar": { "type": "number" },
         "teslimat_ucreti": { "type": "number" },
         "odeme_yontemi": { "type": "string", "maxLength": 50 },
@@ -402,6 +408,25 @@
         "red_gerekcesi": { "type": "string", "maxLength": 300 }
       },
       "required": ["id", "mutfak_id", "baslik", "gorsel_url"]
+    },
+    "CokluMenu": {
+      "title": "CokluMenu",
+      "description": "Mutfakların oluşturduğu çoklu / kombo menü paketleri ve onay durumu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "mutfak_id": { "type": "string", "maxLength": 128 },
+        "mutfak_adi": { "type": "string", "maxLength": 150 },
+        "baslik": { "type": "string", "maxLength": 200 },
+        "aciklama": { "type": "string", "maxLength": 500 },
+        "fiyat": { "type": "number" },
+        "gorsel_url": { "type": "string", "maxLength": 1000 },
+        "aktif_mi": { "type": "boolean" },
+        "onay_durumu": { "type": "string", "maxLength": 30 },
+        "onayli_mi": { "type": "boolean" },
+        "red_gerekcesi": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["id", "mutfak_id"]
     }
   },
   "firestore": {
@@ -508,6 +533,10 @@
     "/tamamlanan_siparisler/{siparisId}": {
       "schema": "Siparis",
       "description": "Tamamlanan ve arşivlenen sipariş kayıtları"
+    },
+    "/coklu_menuler/{menuId}": {
+      "schema": "CokluMenu",
+      "description": "Mutfak çoklu menü paketleri ve yönetici onay kayıtları"
     }
   }
 }

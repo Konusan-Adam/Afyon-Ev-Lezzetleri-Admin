@@ -2,13 +2,15 @@ import { belgeKaydet, koleksiyonGetir } from '@/src/veritabani/FirebaseKoleksiyo
 import { patronBildirimiEkle } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
 import { yerelSiparisDurumGuncelle, yerelSiparisleriGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { kuryeTeslimZiliCal } from '@/src/MalzemeCekmeceleri/KuryeTeslimZili';
-import { siparistenOtomatikBelgeKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
-import { siparisTeslimHakedisKaydet } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriServisi';
+import { siparistenOtomatikBelgeKes, siparistenIadeBelgesiKes } from '@/src/MalzemeCekmeceleri/Finans/otomatikFaturaUretici';
+import { siparisTeslimHakedisKaydet, siparisIptalHakedisGeriAl } from '@/src/MalzemeCekmeceleri/Finans/hakedisDefteriServisi';
 
 export async function kuryePaketiUzerineAl(
   siparisId: string,
   kuryeId: string,
-  kuryeAdi: string
+  kuryeAdi: string,
+  kuryeTelefon: string = '',
+  kuryeTahminiDakika: number = 15
 ): Promise<{ basarili: boolean; mesaj: string }> {
   try {
     // 🛡️ Güvenlik Zırhı: Onaylanmamış kurye paket alamaz
@@ -39,7 +41,10 @@ export async function kuryePaketiUzerineAl(
       return { basarili: false, mesaj: 'Bu paket az önce başka bir kurye tarafından alındı!' };
     }
 
-    const aciklamaMetni = `Kurye (${kuryeAdi}) paketi almak için yola çıktı. 5 dakika içinde teslim alması gerekmektedir!`;
+    const cozumlenenAd = (kuryeAdi || kuryeKayiT?.ad_soyad || 'Kurye').trim();
+    const cozumlenenTelefon = String(kuryeTelefon || kuryeKayiT?.telefon || '').trim();
+    const tahminiDakika = Number(kuryeTahminiDakika) > 0 ? Number(kuryeTahminiDakika) : 15;
+    const aciklamaMetni = `Kurye (${cozumlenenAd}) paketi almak için yola çıktı (~${tahminiDakika} dk). 5 dakika içinde teslim alması gerekmektedir!`;
 
     // 1. Yerel hafızayı güncelle
     yerelSiparisDurumGuncelle(siparis.id || siparisId, 'paketlendi', aciklamaMetni);
@@ -51,7 +56,15 @@ export async function kuryePaketiUzerineAl(
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('afyon_siparis_durum_degisti', {
-          detail: { siparisKimligi: siparis.id || siparisId, durum: 'paketlendi', kurye_id: kuryeId, kurye_adi: kuryeAdi, asama: 'kurye_geliyor' }
+          detail: {
+            siparisKimligi: siparis.id || siparisId,
+            durum: 'paketlendi',
+            kurye_id: kuryeId,
+            kurye_adi: cozumlenenAd,
+            kurye_telefon: cozumlenenTelefon,
+            kurye_tahmini_dakika: tahminiDakika,
+            asama: 'kurye_geliyor'
+          }
         })
       );
     }
@@ -59,19 +72,23 @@ export async function kuryePaketiUzerineAl(
     const kayit = await belgeKaydet('siparisler', siparis.id || siparisId, {
       ...siparis,
       kurye_id: kuryeId,
-      kurye_adi: kuryeAdi,
+      kurye_adi: cozumlenenAd,
+      kurye_telefon: cozumlenenTelefon,
+      kurye_tahmini_dakika: tahminiDakika,
       asama: 'kurye_geliyor',
       durum: 'paketlendi',
       kurye_alis_zamani: Date.now(),
       kurye_teslim_aldi_mi: false,
-      durumAciklamasi: aciklamaMetni
+      durum_aciklamasi: aciklamaMetni,
+      durumAciklamasi: aciklamaMetni,
+      guncellenme_tarihi: new Date().toISOString()
     });
 
     // 🔔 Mutfağa Bildirim Gönder: Kurye yola çıktı
     patronBildirimiEkle(
       'siparis_durumu',
       'Kurye Yola Çıktı! 🛵',
-      `Kurye ${kuryeAdi}, #${siparis.siparis_kodu || siparis.id} nolu paketi almak için mutfağa doğru yola çıktı. (5 dk süre başladı)`,
+      `Kurye ${cozumlenenAd}, #${siparis.siparis_kodu || siparis.id} nolu paketi almak için mutfağa doğru yola çıktı. (~${tahminiDakika} dk)`,
       siparis.id
     );
 
@@ -103,6 +120,12 @@ export async function kuryePaketiTeslimAldi(
       return { basarili: false, mesaj: 'HATA: Mutfak henüz "Kuryeye Teslim Edildi" onayını vermedi! Mutfak onaylamadan paketi teslim alamazsınız.' };
     }
 
+    const kullanicilar = await koleksiyonGetir<any>('kullanicilar');
+    const kuryeKayiT = kullanicilar.find((k: any) => k.id === kuryeId || k.kimlik === kuryeId);
+    const cozumlenenAd = siparis.kurye_adi || kuryeKayiT?.ad_soyad || 'Kurye';
+    const cozumlenenTelefon = siparis.kurye_telefon || kuryeKayiT?.telefon || '';
+    const tahminiDakika = Number(siparis.kurye_tahmini_dakika) > 0 ? Number(siparis.kurye_tahmini_dakika) : 15;
+
     const aciklamaMetni = 'Kurye paketi mutfaktan teslim aldı, adrese doğru yola çıktı!';
 
     yerelSiparisDurumGuncelle(siparis.id || siparisId, 'yolda', aciklamaMetni);
@@ -120,17 +143,23 @@ export async function kuryePaketiTeslimAldi(
 
     const kayit = await belgeKaydet('siparisler', siparis.id || siparisId, {
       ...siparis,
+      kurye_id: siparis.kurye_id || kuryeId,
+      kurye_adi: cozumlenenAd,
+      kurye_telefon: cozumlenenTelefon,
+      kurye_tahmini_dakika: tahminiDakika,
       asama: 'kuryede',
       durum: 'yolda',
       kurye_teslim_aldi_mi: true,
       teslim_aldi_zamani: Date.now(),
-      durumAciklamasi: aciklamaMetni
+      durum_aciklamasi: aciklamaMetni,
+      durumAciklamasi: aciklamaMetni,
+      guncellenme_tarihi: new Date().toISOString()
     });
 
     patronBildirimiEkle(
       'siparis_durumu',
       'Paket Kurye Tarafından Teslim Alındı! 🛵',
-      `Kurye, #${siparis.siparis_kodu || siparis.id} nolu paketi mutfaktan teslim aldı ve yola çıktı.`,
+      `Kurye ${cozumlenenAd}, #${siparis.siparis_kodu || siparis.id} nolu paketi mutfaktan teslim aldı ve yola çıktı.`,
       siparis.id
     );
 
@@ -139,6 +168,63 @@ export async function kuryePaketiTeslimAldi(
       : { basarili: false, mesaj: 'Kayıt sırasında hata oluştu.' };
   } catch (hata) {
     return { basarili: false, mesaj: 'Bağlantı hatası oluştu.' };
+  }
+}
+
+// 🚫 Kurye Tarafından Sipariş İptali (Stok iadesi ile uyumlu: durum: 'iptal', iptal_kaynagi: 'kurye')
+export async function kuryeSiparisiIptalEt(
+  siparisId: string,
+  kuryeId: string,
+  kuryeAdi: string,
+  gerekce: string
+): Promise<{ basarili: boolean; mesaj: string }> {
+  try {
+    const tum = await koleksiyonGetir<any>('siparisler');
+    const siparis = tum.find((s) => s.id === siparisId || s.siparisKodu === siparisId || s.siparis_kodu === siparisId);
+    const hedefId = siparis?.id || siparisId;
+    const temizGerekce = gerekce.trim() || 'Kurye teslimatı gerçekleştiremedi.';
+    const aciklamaMetni = `Kurye (${kuryeAdi}) tarafından iptal edildi: ${temizGerekce}`;
+
+    yerelSiparisDurumGuncelle(hedefId, 'iptal', aciklamaMetni);
+    if (siparis?.siparis_kodu) {
+      yerelSiparisDurumGuncelle(siparis.siparis_kodu, 'iptal', aciklamaMetni);
+    }
+
+    await belgeKaydet('siparisler', hedefId, {
+      ...(siparis || {}),
+      durum: 'iptal',
+      asama: 'iptal',
+      iptal_kaynagi: 'kurye',
+      iptal_gerekcesi: temizGerekce,
+      iptal_eden_id: kuryeId,
+      iptal_eden_adi: kuryeAdi,
+      durum_aciklamasi: aciklamaMetni,
+      durumAciklamasi: aciklamaMetni,
+      guncellenme_tarihi: new Date().toISOString(),
+    });
+
+    siparistenIadeBelgesiKes(hedefId, temizGerekce).catch(() => {});
+    siparisIptalHakedisGeriAl(hedefId, temizGerekce).catch(() => {});
+
+    patronBildirimiEkle(
+      'iade_talebi',
+      'Kurye Siparişi İptal Etti ⚠️',
+      `#${siparis?.siparis_kodu || hedefId} nolu sipariş kurye ${kuryeAdi} tarafından iptal edildi. Gerekçe: ${temizGerekce}`,
+      hedefId
+    );
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('afyon_siparis_durum_degisti', {
+          detail: { siparisKimligi: hedefId, durum: 'iptal', iptal_kaynagi: 'kurye' }
+        })
+      );
+    }
+
+    return { basarili: true, mesaj: 'Sipariş iptal edildi ve mutfak / yönetim bilgilendirildi.' };
+  } catch (err) {
+    console.warn('Kurye sipariş iptal hatası:', err);
+    return { basarili: false, mesaj: 'Sipariş iptal edilirken bağlantı hatası oluştu.' };
   }
 }
 
@@ -160,10 +246,13 @@ export async function kuryeZamanAsimiKontrolEt() {
         const guncelVeri = {
           kurye_id: null,
           kurye_adi: null,
+          kurye_telefon: null,
+          kurye_tahmini_dakika: null,
           asama: 'paketlendi',
           durum: 'paketlendi',
           kurye_alis_zamani: null,
           kurye_teslim_aldi_mi: false,
+          durum_aciklamasi: 'Kurye 5 dakika içinde teslim almadığı için sistem tarafından havuza geri düşürüldü.',
           durumAciklamasi: 'Kurye 5 dakika içinde teslim almadığı için sistem tarafından havuza geri düşürüldü.'
         };
 

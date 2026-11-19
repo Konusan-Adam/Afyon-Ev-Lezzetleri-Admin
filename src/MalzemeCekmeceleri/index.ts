@@ -24,6 +24,7 @@ export * from "./SekmeAlarmi";
 export * from "./EkranUyanikTutucu";
 export * from "./MutfakCekmecesi";
 export * from "./useCanliReklamAyarlari";
+export * from "./useCanliCokluMenuler";
 export * from "./useQrTeslimat";
 export * from "./KategoriCekmecesi";
 export * from "./filtreliYemekleriGetir";

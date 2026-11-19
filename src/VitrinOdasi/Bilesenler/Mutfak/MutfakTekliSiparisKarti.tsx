@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ban, CheckCircle, PackageCheck, Bike, Clock, AlertCircle, Send } from 'lucide-react';
+import { Ban, CheckCircle, PackageCheck, Bike, Clock, AlertCircle, Send, Phone } from 'lucide-react';
 import { MutfakSureSecici } from '@/src/VitrinOdasi/Bilesenler/Mutfak/MutfakSureSecici';
 import { mutfakSiparisDurumuGuncelle } from '@/src/MalzemeCekmeceleri/Mutfak/MutfakSiparisIslemleri';
 import { icerikGuvenlikKontrolu } from '@/src/MalzemeCekmeceleri';
@@ -48,6 +48,7 @@ export const MutfakTekliSiparisKarti: React.FC<Props> = ({ siparis, onYenile, on
   const hazirlaniyorMu = durum === 'hazirlaniyor';
   const paketlendiMi = durum === 'paketlendi';
   const yoldaMi = durum === 'yolda' || durum === 'kuryede';
+  const kuryeBilgisiVarMi = Boolean(siparis.kurye_adi || siparis.kurye_telefon);
 
   return (
     <div className={`border rounded-2xl p-4 space-y-3 shadow-md transition-all ${
@@ -101,6 +102,33 @@ export const MutfakTekliSiparisKarti: React.FC<Props> = ({ siparis, onYenile, on
           </div>
         ))}
       </div>
+
+      {/* Kurye Bilgi Kartı (kurye_adi / kurye_telefon / kurye_tahmini_dakika) */}
+      {kuryeBilgisiVarMi && (
+        <div className="p-3 rounded-xl bg-emerald-950/35 border border-emerald-500/40 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shrink-0">
+              <Bike className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-white truncate">{siparis.kurye_adi || 'Atanan Kurye'}</p>
+              <p className="text-[11px] text-emerald-300 font-semibold">
+                {siparis.kurye_tahmini_dakika ? `Tahmini Varış: ~${siparis.kurye_tahmini_dakika} dk` : 'Kurye görevlendirildi'}
+                {siparis.kurye_telefon ? ` • ${siparis.kurye_telefon}` : ''}
+              </p>
+            </div>
+          </div>
+          {siparis.kurye_telefon && (
+            <a
+              href={`tel:${String(siparis.kurye_telefon).replace(/\s+/g, '')}`}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 shrink-0 shadow-sm transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5" />
+              <span>Kuryeyi Ara</span>
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Hata Uyarısı */}
       {hataUyarisi && (

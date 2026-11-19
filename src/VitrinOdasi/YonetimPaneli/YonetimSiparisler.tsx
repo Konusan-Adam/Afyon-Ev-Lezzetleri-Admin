@@ -13,6 +13,8 @@ interface YonetimSiparis {
   mutfak: string;
   mutfakId?: string;
   kuryeId?: string;
+  kuryeTelefon?: string;
+  kuryeTahminiDakika?: number;
   teslimatUcreti?: number;
   urunler: string;
   tutar: number;
@@ -21,6 +23,7 @@ interface YonetimSiparis {
   saat: string;
   adres: string;
   atananKurye?: string;
+  iptalKaynagi?: string;
 }
 
 const BASLANGIC_SIPARISLER: YonetimSiparis[] = [
@@ -67,7 +70,9 @@ const BASLANGIC_SIPARISLER: YonetimSiparis[] = [
 
 export const YonetimSiparisler: React.FC = () => {
   const [siparisler, setSiparisler5] = useState<YonetimSiparis[]>(BASLANGIC_SIPARISLER);
-  const [kuryeler, setKuryeler] = useState<{ id: string; ad_soyad: string; arac_tipi?: string }[]>([]);
+  const [kuryeler, setKuryeler] = useState<{ id: string; ad_soyad: string; telefon: string; arac_tipi?: string }[]>([]);
+  const [iptalModalSiparis, setIptalModalSiparis] = useState<YonetimSiparis | null>(null);
+  const [adminIptalGerekcesi, setAdminIptalGerekcesi] = useState('Yönetici / Sevk masası tarafından iptal edildi.');
 
   useEffect(() => {
     let aktif = true;
@@ -81,6 +86,7 @@ export const YonetimSiparisler: React.FC = () => {
           .map((k) => ({
             id: k.id || k.kimlik,
             ad_soyad: k.ad_soyad || 'Kurye',
+            telefon: k.telefon || '',
             arac_tipi: k.arac_tipi || 'Motosiklet'
           }));
         setKuryeler(kuryeList);
@@ -97,6 +103,8 @@ export const YonetimSiparisler: React.FC = () => {
         mutfak: s.mutfak_adi || s.mutfak || 'Ev Mutfağı',
         mutfakId: s.mutfak_id,
         kuryeId: s.kurye_id,
+        kuryeTelefon: s.kurye_telefon || '',
+        kuryeTahminiDakika: Number(s.kurye_tahmini_dakika) || 15,
         teslimatUcreti: Number(s.teslimat_ucreti || s.teslimatUcreti || 0),
         urunler: Array.isArray(s.elemanlar)
           ? s.elemanlar.map((e: any) => `${e.yemek_baslik || e.baslik || 'Ürün'} (${e.adet}x)`).join(', ')
@@ -106,7 +114,8 @@ export const YonetimSiparisler: React.FC = () => {
         durumMetni: s.durum_aciklamasi || (s.durum === 'kuryede' || s.durum === 'yolda' ? 'Kurye Yolda' : 'Fırında Pişiyor'),
         saat: s.olusturma_tarihi ? s.olusturma_tarihi.slice(11, 16) : '12:00',
         adres: s.teslimat_adresi_metni || s.adres || 'Afyonkarahisar',
-        atananKurye: s.kurye_adi || s.atananKurye || ''
+        atananKurye: s.kurye_adi || s.atananKurye || '',
+        iptalKaynagi: s.iptal_kaynagi
       }));
       setSiparisler5(donusturulen);
     });
@@ -117,7 +126,11 @@ export const YonetimSiparisler: React.FC = () => {
     };
   }, []);
 
-  const durumGuncelle = async (id: string, yeniDurum: 'hazirlaniyor' | 'kuryede' | 'teslim_edildi' | 'iptal') => {
+  const durumGuncelle = async (
+    id: string,
+    yeniDurum: 'hazirlaniyor' | 'kuryede' | 'teslim_edildi' | 'iptal',
+    iptalGerekcesi?: string
+  ) => {
     const metinMap = {
       hazirlaniyor: 'Fırında Pişiyor',
       kuryede: 'Kurye Yolda 🛵',
@@ -125,20 +138,31 @@ export const YonetimSiparisler: React.FC = () => {
       iptal: 'İptal Edildi ✕'
     };
 
-    setSiparisler5(siparisler.map(s => s.id === id ? { ...s, durum: yeniDurum, durumMetni: metinMap[yeniDurum] } : s));
+    const temizGerekce = (iptalGerekcesi || 'Yönetim tarafından sipariş iptal edildi').trim();
+    const durumAciklama = yeniDurum === 'iptal' ? `İptal Edildi (Yönetim): ${temizGerekce}` : metinMap[yeniDurum];
+
+    setSiparisler5(siparisler.map(s => s.id === id ? { ...s, durum: yeniDurum, durumMetni: durumAciklama } : s));
 
     try {
       await belgeKaydet('siparisler', id, {
         durum: yeniDurum === 'kuryede' ? 'yolda' : yeniDurum,
-        durum_aciklamasi: metinMap[yeniDurum],
+        ...(yeniDurum === 'iptal'
+          ? {
+              asama: 'iptal',
+              iptal_kaynagi: 'admin',
+              iptal_gerekcesi: temizGerekce,
+            }
+          : {}),
+        durum_aciklamasi: durumAciklama,
+        durumAciklamasi: durumAciklama,
         guncellenme_tarihi: new Date().toISOString()
       });
 
       // 🔔 Durum Bildirimi Ekle
       patronBildirimiEkle(
-        'siparis_durumu',
-        'Sipariş Durumu Güncellendi',
-        `#${id} nolu sipariş durumu: ${metinMap[yeniDurum]}`,
+        yeniDurum === 'iptal' ? 'iade_talebi' : 'siparis_durumu',
+        yeniDurum === 'iptal' ? 'Sipariş Yönetim Tarafından İptal Edildi ⚠️' : 'Sipariş Durumu Güncellendi',
+        `#${id} nolu sipariş durumu: ${durumAciklama}`,
         id
       );
 
@@ -161,33 +185,64 @@ export const YonetimSiparisler: React.FC = () => {
           siparisTeslimHakedisKaydet(teslimVerisi).catch(() => {});
         }
       } else if (yeniDurum === 'iptal') {
-        siparistenIadeBelgesiKes(id, 'Yönetim tarafından sipariş iptal edildi').catch(() => {});
-        siparisIptalHakedisGeriAl(id, 'Yönetim tarafından sipariş iptal edildi').catch(() => {});
+        siparistenIadeBelgesiKes(id, temizGerekce).catch(() => {});
+        siparisIptalHakedisGeriAl(id, temizGerekce).catch(() => {});
       }
     } catch (hata) {
       console.warn('Sipariş durum güncelleme hatası:', hata);
     }
   };
 
-  const kuryeAta = async (siparisId: string, kuryeAdi: string) => {
+  const kuryeAta = async (siparisId: string, kuryeAdi: string, tahminiDakika?: number) => {
     const secilenKurye = kuryeler.find((k) => k.ad_soyad === kuryeAdi);
     const kuryeId = secilenKurye?.id || '';
-    setSiparisler5(siparisler.map(s => s.id === siparisId ? { ...s, atananKurye: kuryeAdi, kuryeId } : s));
+    const kuryeTelefon = secilenKurye?.telefon || '';
+    const hedefSiparis = siparisler.find((s) => s.id === siparisId);
+    const guncelDakika = Number(tahminiDakika || hedefSiparis?.kuryeTahminiDakika || 15);
+
+    setSiparisler5(
+      siparisler.map((s) =>
+        s.id === siparisId
+          ? {
+              ...s,
+              atananKurye: kuryeAdi,
+              kuryeId,
+              kuryeTelefon: kuryeAdi ? kuryeTelefon : '',
+              kuryeTahminiDakika: guncelDakika,
+            }
+          : s
+      )
+    );
+
     try {
       await belgeKaydet('siparisler', siparisId, {
-        ...(kuryeId ? { kurye_id: kuryeId } : {}),
-        kurye_adi: kuryeAdi,
-        atananKurye: kuryeAdi,
+        ...(kuryeAdi
+          ? {
+              ...(kuryeId ? { kurye_id: kuryeId } : {}),
+              kurye_adi: kuryeAdi,
+              kurye_telefon: kuryeTelefon,
+              kurye_tahmini_dakika: guncelDakika,
+              atananKurye: kuryeAdi,
+            }
+          : {
+              kurye_id: null,
+              kurye_adi: '',
+              kurye_telefon: '',
+              kurye_tahmini_dakika: null,
+              atananKurye: '',
+            }),
         guncellenme_tarihi: new Date().toISOString()
       });
 
-      // 🔔 Kurye Atama Bildirimi
-      patronBildirimiEkle(
-        'siparis_durumu',
-        'Kurye Atandı',
-        `#${siparisId} nolu siparişe ${kuryeAdi} atandı.`,
-        siparisId
-      );
+      if (kuryeAdi) {
+        // 🔔 Kurye Atama Bildirimi
+        patronBildirimiEkle(
+          'siparis_durumu',
+          'Kurye Atandı',
+          `#${siparisId} nolu siparişe ${kuryeAdi} atandı (~${guncelDakika} dk).`,
+          siparisId
+        );
+      }
     } catch (hata) {
       console.warn('Kurye atama hatası:', hata);
     }
@@ -280,13 +335,13 @@ export const YonetimSiparisler: React.FC = () => {
 
             {/* Aksiyon Çubuğu: Durum Değiştir & Kurye Ata */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-xs">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-purple-300 font-medium flex items-center gap-1">
                   <Bike className="w-3.5 h-3.5 text-amber-400" /> Atanan Kurye:
                 </span>
                 <select
                   value={sip.atananKurye || ''}
-                  onChange={(e) => kuryeAta(sip.id, e.target.value)}
+                  onChange={(e) => kuryeAta(sip.id, e.target.value, sip.kuryeTahminiDakika || 15)}
                   className="bg-[#130713] border border-purple-800/60 rounded-xl px-2.5 py-1 text-xs text-amber-300 focus:outline-none focus:border-amber-400 font-semibold"
                 >
                   <option value="">Kurye Seçilmedi</option>
@@ -296,6 +351,24 @@ export const YonetimSiparisler: React.FC = () => {
                     </option>
                   ))}
                 </select>
+                {sip.atananKurye && (
+                  <select
+                    value={sip.kuryeTahminiDakika || 15}
+                    onChange={(e) => kuryeAta(sip.id, sip.atananKurye || '', Number(e.target.value) || 15)}
+                    className="bg-[#130713] border border-purple-800/60 rounded-xl px-2 py-1 text-[11px] text-emerald-300 font-bold focus:outline-none focus:border-amber-400"
+                    title="Kurye tahmini varış süresi"
+                  >
+                    <option value={10}>~10 dk</option>
+                    <option value={15}>~15 dk</option>
+                    <option value={20}>~20 dk</option>
+                    <option value={30}>~30 dk</option>
+                  </select>
+                )}
+                {sip.kuryeTelefon && (
+                  <span className="text-[11px] text-gray-400 font-mono">
+                    {sip.kuryeTelefon}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -329,7 +402,10 @@ export const YonetimSiparisler: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => durumGuncelle(sip.id, 'iptal')}
+                  onClick={() => {
+                    setIptalModalSiparis(sip);
+                    setAdminIptalGerekcesi('Yönetici / Sevk masası tarafından iptal edildi.');
+                  }}
                   className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors cursor-pointer ${
                     sip.durum === 'iptal' ? 'bg-rose-600 text-white' : 'bg-[#240A2C] text-gray-300 hover:bg-[#3D1446]'
                   }`}
@@ -341,6 +417,63 @@ export const YonetimSiparisler: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Yönetici Sipariş İptal Modalı (iptal_kaynagi: 'admin') */}
+      {iptalModalSiparis && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await durumGuncelle(iptalModalSiparis.id, 'iptal', adminIptalGerekcesi);
+              setIptalModalSiparis(null);
+            }}
+            className="bg-[#180A1F] border border-rose-500/50 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl text-xs"
+          >
+            <div className="flex items-center justify-between border-b border-purple-950 pb-3">
+              <div className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-rose-400" />
+                <div>
+                  <h4 className="text-sm font-extrabold text-white">Siparişi İptal Et (Yönetim)</h4>
+                  <p className="text-[11px] text-purple-300">
+                    #{iptalModalSiparis.id} • {iptalModalSiparis.mutfak}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-gray-300 font-semibold block mb-1.5">İptal Gerekçesi</label>
+              <textarea
+                rows={3}
+                required
+                value={adminIptalGerekcesi}
+                onChange={(e) => setAdminIptalGerekcesi(e.target.value)}
+                placeholder="Örn: Müşteri talebiyle veya operasyonel sebeple iptal edildi."
+                className="w-full bg-[#120614] border border-purple-800/70 rounded-xl p-3 text-white outline-none focus:border-rose-400 resize-none"
+              />
+              <p className="text-[10px] text-amber-300/80 mt-1">
+                Not: Sipariş iptal edildiğinde düşülen günlük porsiyon stokları Mutfak Paneli tarafından otomatik iade edilir.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-purple-950">
+              <button
+                type="button"
+                onClick={() => setIptalModalSiparis(null)}
+                className="px-4 py-2 rounded-xl bg-purple-950 text-gray-300 font-bold cursor-pointer"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold cursor-pointer"
+              >
+                İptali Onayla
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

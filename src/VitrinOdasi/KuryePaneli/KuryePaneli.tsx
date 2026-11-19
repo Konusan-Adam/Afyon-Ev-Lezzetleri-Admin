@@ -39,11 +39,19 @@ export const KuryePaneli: React.FC = () => {
 
   const kuryeId = aktifKullanici?.kimlik || aktifKullanici?.id || 'kurye-1';
   const kuryeAdi = aktifKullanici?.ad_soyad || 'Kurye';
+  const kuryeTelefon = aktifKullanici?.telefon || '';
 
   // 🔔 Kurye Dağıtım & Paket Var Canlı Dedektörü
   const { yeniPaketUyarisi, uyariKapat } = useKuryeBildirimleri(kuryeId);
 
-  const { aktifPaketler, teslimEdilenler, paketiAl, paketiTeslimAldiBildir, teslimEt } = useKuryeCanliPaketler(kuryeId, kuryeAdi);
+  const {
+    aktifPaketler,
+    teslimEdilenler,
+    paketiAl,
+    paketiTeslimAldiBildir,
+    teslimEt,
+    siparisiIptalEt
+  } = useKuryeCanliPaketler(kuryeId, kuryeAdi, kuryeTelefon);
 
   const aktifPaketIdleri = aktifPaketler.map(p => p.id || p.siparis_kodu || p.siparisKodu);
   const { yayinAktif, sonKonum } = useKuryeKonumYayini({
@@ -56,8 +64,14 @@ export const KuryePaneli: React.FC = () => {
     aktifPaketIdleri
   });
 
-  const paketAlVeBildir = async (id: string) => {
-    const sonuc = await paketiAl(id);
+  const paketAlVeBildir = async (id: string, tahminiDakika: number = 15) => {
+    const sonuc = await paketiAl(id, tahminiDakika);
+    setBilgiMesaji(sonuc.mesaj);
+    setTimeout(() => setBilgiMesaji(''), 4000);
+  };
+
+  const siparisIptalVeBildir = async (id: string, gerekce: string) => {
+    const sonuc = await siparisiIptalEt(id, gerekce);
     setBilgiMesaji(sonuc.mesaj);
     setTimeout(() => setBilgiMesaji(''), 4000);
   };
@@ -247,6 +261,7 @@ export const KuryePaneli: React.FC = () => {
                     setTimeout(() => setBilgiMesaji(''), 4000);
                   }}
                   onTeslimEt={teslimEtVeBildir}
+                  onSiparisiIptalEt={siparisIptalVeBildir}
                   onQrAc={(kod) => {
                     setSeciliSiparisKodu(kod);
                     setQrTaramaAcik(true);
