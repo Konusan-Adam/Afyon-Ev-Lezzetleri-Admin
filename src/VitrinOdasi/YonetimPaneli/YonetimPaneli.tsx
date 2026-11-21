@@ -102,7 +102,7 @@ export const YonetimPaneli: React.FC = () => {
     },
     {
       id: 'mutfak_afisleri',
-      baslik: 'Mutfak Afiş Onayları',
+      baslik: 'Mutfak Afişleri & Vitrin',
       ikon: Megaphone,
       rozet: bekleyenAfisSayisi > 0 ? `${bekleyenAfisSayisi} Bekleyen` : undefined
     },
@@ -126,7 +126,7 @@ export const YonetimPaneli: React.FC = () => {
   const baslikGetir = () => {
     switch (aktifSekme) {
       case 'mutfaklar': return 'Mutfak Yönetimi, Hakediş & Toplu Ödeme Merkezi';
-      case 'mutfak_afisleri': return 'Mutfak Afiş Onayları — Vitrin Duyuru Kontrol Masası';
+      case 'mutfak_afisleri': return 'Mutfak Afişleri ve Tepe Vitrin Yönetimi';
       case 'siparisler': return 'Canlı Sipariş Sevk ve Ciro Takip Masası';
       case 'kuryeler': return 'Kurye Operasyonları, Rota ve KM Fiyatlandırma';
       case 'yemekler': return 'Menü, Kategori ve Varyasyon Yönetimi';

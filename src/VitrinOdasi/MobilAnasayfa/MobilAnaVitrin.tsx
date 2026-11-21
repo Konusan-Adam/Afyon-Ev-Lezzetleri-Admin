@@ -15,6 +15,9 @@ import { SagFiltreSutunu } from '../AramaFiltre/SagFiltreSutunu';
 import { AnaAfisBannerVitrini } from '../ReklamVeDuyuru/AnaAfisBannerVitrini';
 import { TeslimatZamaniBari } from '../Bilesenler/OnSiparisVePorsiyon/TeslimatZamaniBari';
 import { Mutfak, Yemek } from '@/src/veritabani/VeriTipleri';
+import { mutfaklariGetir } from '@/src/MalzemeCekmeceleri/Mutfak/mutfaklariGetir';
+import { belgeGetir } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { mutfakGorseliniSabitle } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 
 interface MobilAnaVitrinProps {
   anasayfayaGitTiklandi?: () => void;
@@ -67,6 +70,19 @@ export const MobilAnaVitrin: React.FC<MobilAnaVitrinProps> = ({
     gelAlPenceresiAc
   } = teslimatHafizasiKullan();
   const { kampanyalar } = useKampanyalar();
+  const { mutfaklar } = mutfaklariGetir();
+
+  const mutfakIdIleSec = async (mutfakId: string) => {
+    const bulunan = mutfaklar.find((m) => m.id === mutfakId);
+    if (bulunan) {
+      mutfakDegistir(bulunan);
+      return;
+    }
+    const dbMutfak = await belgeGetir<Mutfak>('mutfaklar', mutfakId);
+    if (dbMutfak) {
+      mutfakDegistir(mutfakGorseliniSabitle(dbMutfak));
+    }
+  };
 
   const adresMetni = teslimatTipi === 'gel_al'
     ? (seciliGelAlSubesi ? `Gel Al: ${seciliGelAlSubesi.ad}` : 'Gel Al Noktası Seçiniz')
@@ -118,6 +134,7 @@ export const MobilAnaVitrin: React.FC<MobilAnaVitrinProps> = ({
         <div className="mt-2 lg:hidden px-4">
           <MobilKampanyaSlider 
             kampanyalar={kampanyalar} 
+            onMutfakSec={mutfakIdIleSec}
           />
         </div>
 
@@ -133,7 +150,7 @@ export const MobilAnaVitrin: React.FC<MobilAnaVitrinProps> = ({
           <div className="flex-1 min-w-0 space-y-4">
             {/* 🌟 Ev Mutfakları ve Aşçıları Başlığı Üzerindeki Özel Afiş Bannerı (Sadece Masaüstünde Görünür - Mobilde ve Tablette Gizli) */}
             <div className="hidden lg:block">
-              <AnaAfisBannerVitrini />
+              <AnaAfisBannerVitrini onMutfakSec={mutfakIdIleSec} />
             </div>
 
             {/* 1. Sıra: Afyon Ev Mutfakları & Aşçıları (Üst barın hemen altı) */}

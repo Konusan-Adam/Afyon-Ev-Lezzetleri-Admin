@@ -411,7 +411,7 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
             }`}
           >
             <Megaphone className="w-3.5 h-3.5" />
-            <span>Mutfak Afiş Onayları ({bekleyenAfisSayisi})</span>
+            <span>Mutfak Afişleri & Vitrin ({bekleyenAfisSayisi})</span>
           </button>
           <button
             onClick={() => setAltSekme('hakedisler_odemeler')}

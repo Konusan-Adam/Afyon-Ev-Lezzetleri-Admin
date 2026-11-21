@@ -405,6 +405,8 @@
         "aktif_mi": { "type": "boolean" },
         "onay_durumu": { "type": "string", "maxLength": 30 },
         "onayli_mi": { "type": "boolean" },
+        "sira": { "type": "number" },
+        "red_nedeni": { "type": "string", "maxLength": 300 },
         "red_gerekcesi": { "type": "string", "maxLength": 300 }
       },
       "required": ["id", "mutfak_id", "baslik", "gorsel_url"]
