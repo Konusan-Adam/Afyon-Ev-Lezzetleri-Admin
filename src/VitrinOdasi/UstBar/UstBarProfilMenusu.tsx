@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, LogOut, ShieldCheck, UserCircle, ChefHat, Bike, ChevronDown } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { aktifMisafirSiparisSayisiGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
+import { superAdminMi, yonetimYetkisiVarMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 
 interface UstBarProfilMenusuProps {
   tema?: 'koyu' | 'acik';
@@ -113,7 +114,7 @@ export const UstBarProfilMenusu: React.FC<UstBarProfilMenusuProps> = ({ tema = '
             </div>
           </div>
 
-          {aktifKullanici.rol === 'yonetici' && (
+          {yonetimYetkisiVarMi(aktifKullanici.rol) && (
             <button
               type="button"
               onClick={() => {
@@ -141,7 +142,7 @@ export const UstBarProfilMenusu: React.FC<UstBarProfilMenusuProps> = ({ tema = '
             <span>Siparişlerim</span>
           </button>
 
-          {(aktifKullanici.rol === 'yonetici' || aktifKullanici.rol === 'ev_mutfagi') && (
+          {(superAdminMi(aktifKullanici.rol) || aktifKullanici.rol === 'ev_mutfagi') && (
             <button
               type="button"
               onClick={() => {
@@ -157,7 +158,7 @@ export const UstBarProfilMenusu: React.FC<UstBarProfilMenusuProps> = ({ tema = '
             </button>
           )}
 
-          {(aktifKullanici.rol === 'yonetici' || aktifKullanici.rol === 'kurye') && (
+          {(superAdminMi(aktifKullanici.rol) || aktifKullanici.rol === 'kurye') && (
             <button
               type="button"
               onClick={() => {

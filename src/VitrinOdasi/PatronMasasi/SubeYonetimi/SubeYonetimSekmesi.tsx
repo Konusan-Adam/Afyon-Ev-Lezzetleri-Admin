@@ -8,6 +8,7 @@ import { SubeOzetIstatistikleri } from './SubeOzetIstatistikleri';
 import { SubeAltNavigasyon, SubeAltSekme } from './SubeAltNavigasyon';
 import { SubeIcerikGorunumu } from './SubeIcerikGorunumu';
 import { SubeYonetimModallari } from './SubeYonetimModallari';
+import { subeMuduruMu } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 
 export interface SubeYonlendirmeBilgisi {
   altSekme: SubeAltSekme;
@@ -26,7 +27,7 @@ export const SubeYonetimSekmesi: React.FC<SubeYonetimSekmesiProps> = ({ subeYonl
   const { stoklar } = subeStokServisi();
   const { siparisler } = subeSiparisServisi();
 
-  const subeAdminMi = aktifKullanici?.rol === 'sube_admin' && Boolean(aktifKullanici?.sube_id);
+  const subeAdminMi = subeMuduruMu(aktifKullanici?.rol) && Boolean(aktifKullanici?.sube_id);
   const goruntulenenSubeler = subeAdminMi ? subeler.filter(s => (s.id || s.kimlik) === aktifKullanici?.sube_id) : subeler;
   const varsayilanId = subeAdminMi ? (aktifKullanici?.sube_id || '') : (goruntulenenSubeler[0]?.id || 'sube-1');
 

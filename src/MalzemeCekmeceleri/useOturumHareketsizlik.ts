@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
+import { yonetimYetkisiVarMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 
 const OTURUM_SURESI_MS = 60 * 60 * 1000; // 1 Saat (60 dakika)
 const UYARI_SURESI_MS = 55 * 60 * 1000;  // 55. dakika uyarısı
@@ -16,8 +17,8 @@ export const useOturumHareketsizlik = (): OturumZamanlayiciDurumu => {
   const [uyariGoster, setUyariGoster] = useState<boolean>(false);
   const [kalanSaniye, setKalanSaniye] = useState<number>(300);
 
-  // Patron / Admin bu zaman aşımı kuralından tamamen muaftır
-  const yoneticiMi = aktifKullanici?.rol === 'yonetici';
+  // Patron / Yönetim rolleri bu zaman aşımı kuralından tamamen muaftır
+  const yoneticiMi = yonetimYetkisiVarMi(aktifKullanici?.rol);
 
   const oturumDiriTut = useCallback(() => {
     sonHareketZamaniRef.current = Date.now();

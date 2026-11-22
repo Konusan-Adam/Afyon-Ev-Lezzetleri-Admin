@@ -206,11 +206,11 @@ export interface Kullanici {
   kimlik?: string;
   ad_soyad: string;
   telefon: string;                     // Giriş için tek anahtar: "05XXXXXXXXX"
-  rol: 'sube_admin' | KullaniciRolu;   // Şube yetkilisi rolü
+  rol: 'sube_muduru' | 'super_admin' | 'sube_admin' | KullaniciRolu;   // Yetkili rolü
   sube_id?: string;                    // Atandığı şube ID'si (Örn: "sube-1")
   isletme_adi?: string;                // "Afyon Ev Lezzetleri Zafer Meydanı"
   onayli_mi?: boolean;                 // true
-  sifre?: string;                      // Şube admin ve kullanıcı şifresi
+  sifre?: string;                      // Yönetici ve kullanıcı şifresi
   eposta?: string;
   arac_tipi?: string;
   plaka?: string;
@@ -218,7 +218,17 @@ export interface Kullanici {
   olusturma_tarihi?: string;
 }
 
-export type KullaniciRolu = 'musteri' | 'asci' | 'kurye' | 'yonetici' | 'sube_admin' | 'ev_mutfagi' | 'ticari_restoran' | string;
+export type KullaniciRolu =
+  | 'super_admin'
+  | 'sube_muduru'
+  | 'musteri'
+  | 'asci'
+  | 'kurye'
+  | 'yonetici'
+  | 'sube_admin'
+  | 'ev_mutfagi'
+  | 'ticari_restoran'
+  | string;
 
 export interface SepetElemani {
   id: string;

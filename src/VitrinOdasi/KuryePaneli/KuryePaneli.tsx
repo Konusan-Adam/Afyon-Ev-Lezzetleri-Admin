@@ -16,6 +16,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
+import { superAdminMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 import { KuryeCuzdanSekmesi } from './KuryeCuzdanSekmesi';
 import { KuryeQrTarayiciModali } from '../Bilesenler/QrTeslimat/KuryeQrTarayiciModali';
 import { KuryeHaritaModali } from '../Bilesenler/KuryeTeslimat/KuryeHaritaModali';
@@ -94,7 +95,7 @@ export const KuryePaneli: React.FC = () => {
       />
 
       {/* 👑 PATRON TEST GEÇİŞ BANNERI (Yalnızca Patron/Yönetici İse Görünür) */}
-      {aktifKullanici?.rol === 'yonetici' && (
+      {superAdminMi(aktifKullanici?.rol) && (
         <div className="bg-gradient-to-r from-amber-600 via-purple-900 to-amber-700 text-white px-4 py-2 text-xs flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-amber-300" />

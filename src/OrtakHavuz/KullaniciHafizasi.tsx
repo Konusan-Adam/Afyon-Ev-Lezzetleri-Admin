@@ -5,6 +5,8 @@ import {
   veritabanindanKullaniciGirisYaptir,
 } from '@/src/MalzemeCekmeceleri/kullaniciIslemleri';
 import { mevcutUrlPaneliniBul, urlVeBasligiGuncelle } from '@/src/GirisKapisi/RotaYardimcisi';
+import { yonetimYetkisiVarMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
+import { superAdminHesabiniSenkronizeEt } from '@/src/MalzemeCekmeceleri/Kimlik/superAdminSenkronizasyonu';
 
 export type PanelTipi = 'vitrin' | 'patron' | 'musteri' | 'mutfak' | 'kurye';
 
@@ -21,6 +23,7 @@ interface KullaniciHafizaTipi {
   pencereAc: (baslangicSekmesi?: 'giris' | 'kayit' | any, baslangicRolu?: KullaniciRolu) => void;
   pencereKapat: () => void;
   girisYap: (telefon: string, sifre: string) => Promise<boolean>;
+  oturumKullanicisiniAyarla: (kullanici: Kullanici) => void;
   kayitOl: (bilgiler: {
     ad_soyad: string;
     telefon: string;
@@ -55,6 +58,10 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
   const [baslangicRolu, setBaslangicRolu] = useState<KullaniciRolu>('musteri');
   const [yukleniyor, setYukleniyor] = useState<boolean>(false);
   const [goruntulenenPanel, setGoruntulenenPanel] = useState<PanelTipi>(() => mevcutUrlPaneliniBul());
+
+  useEffect(() => {
+    superAdminHesabiniSenkronizeEt();
+  }, []);
 
   // URL rotası veya geri/ileri tuşu değiştiğinde senkronize et
   useEffect(() => {
@@ -97,13 +104,13 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
       setGoruntulenenPanel('mutfak');
     } else if (rol === 'kurye') {
       setGoruntulenenPanel('kurye');
-    } else if (rol === 'yonetici' || rol === 'sube_admin') {
+    } else if (yonetimYetkisiVarMi(rol)) {
       setGoruntulenenPanel('patron');
     }
   };
 
   const roleGorePaneleYonlendir = (kullanici: Kullanici) => {
-    if (kullanici.rol === 'yonetici' || kullanici.rol === 'sube_admin') {
+    if (yonetimYetkisiVarMi(kullanici.rol)) {
       setGoruntulenenPanel('patron');
     } else if (kullanici.rol === 'ev_mutfagi' || kullanici.rol === 'ticari_restoran') {
       setGoruntulenenPanel('mutfak');
@@ -114,18 +121,22 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const oturumKullanicisiniAyarla = (kullanici: Kullanici) => {
+    setAktifKullanici(kullanici);
+    setPencereAcik(false);
+    roleGorePaneleYonlendir(kullanici);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('afyon_oturum_degisti', { detail: { aktifKullanici: kullanici } }));
+    }
+  };
+
   const girisYap = async (telefon: string, sifre: string): Promise<boolean> => {
     setYukleniyor(true);
     const kullanici = await veritabanindanKullaniciGirisYaptir(telefon, sifre);
     setYukleniyor(false);
 
     if (kullanici) {
-      setAktifKullanici(kullanici);
-      setPencereAcik(false);
-      roleGorePaneleYonlendir(kullanici);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('afyon_oturum_degisti', { detail: { aktifKullanici: kullanici } }));
-      }
+      oturumKullanicisiniAyarla(kullanici);
       return true;
     }
     return false;
@@ -146,12 +157,7 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
     setYukleniyor(false);
 
     if (kaydolunankullanici) {
-      setAktifKullanici(kaydolunankullanici);
-      setPencereAcik(false);
-      roleGorePaneleYonlendir(kaydolunankullanici);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('afyon_oturum_degisti', { detail: { aktifKullanici: kaydolunankullanici } }));
-      }
+      oturumKullanicisiniAyarla(kaydolunankullanici);
       return true;
     }
     return false;
@@ -164,6 +170,9 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
     localStorage.removeItem('afyon_secili_mahalle');
     localStorage.removeItem('afyon_son_misafir_telefon');
     localStorage.removeItem('afyon_son_misafir_ad');
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('afyon_patron_guvenlik_muhru');
+    }
     setGoruntulenenPanel('vitrin');
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('afyon_oturum_degisti', { detail: { aktifKullanici: null } }));
@@ -184,13 +193,14 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
         yonetimModunuAyarla,
         pencereAc: (sekme?: any, rol?: KullaniciRolu) => {
           const gecerliSekme = sekme === 'kayit' ? 'kayit' : 'giris';
-          const gecerliRol = rol && ['musteri', 'ev_mutfagi', 'ticari_restoran', 'kurye', 'yonetici'].includes(rol) ? rol : 'musteri';
+          const gecerliRol = rol && ['musteri', 'ev_mutfagi', 'ticari_restoran', 'kurye'].includes(rol) ? rol : 'musteri';
           setBaslangicSekmesi(gecerliSekme);
           setBaslangicRolu(gecerliRol);
           setPencereAcik(true);
         },
         pencereKapat: () => setPencereAcik(false),
         girisYap,
+        oturumKullanicisiniAyarla,
         kayitOl,
         cikisYap,
         testRoluneGec,

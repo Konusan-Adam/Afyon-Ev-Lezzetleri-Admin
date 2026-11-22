@@ -15,7 +15,7 @@ export const SubeMudurAtamaModali: React.FC<MudurModaliProps> = ({ sube, onKapat
   const mudurVarMi = Boolean(sube?.yetkili_telefon);
   const [adSoyad, setAdSoyad] = useState(sube?.yetkili_adi || '');
   const [telefon, setTelefon] = useState(sube?.yetkili_telefon || '');
-  const [sifre, setSifre] = useState('1234');
+  const [sifre, setSifre] = useState('');
   const [yukleniyor, setYukleniyor] = useState(false);
   const [silmeOnayModu, setSilmeOnayModu] = useState(false);
 
@@ -79,7 +79,7 @@ export const SubeMudurAtamaModali: React.FC<MudurModaliProps> = ({ sube, onKapat
             <div className="flex items-center gap-2">
               <button type="button" onClick={onKapat} className="px-3.5 py-2 rounded-xl bg-purple-900/40 text-gray-300 font-bold text-xs cursor-pointer">İptal</button>
               <button type="submit" disabled={yukleniyor} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500 text-white font-black text-xs hover:bg-blue-600 disabled:opacity-50 cursor-pointer">
-                <ShieldCheck className="w-4 h-4" /><span>{yukleniyor ? 'Kaydediliyor...' : mudurVarMi ? 'Güncelle' : 'sube_admin Yap'}</span>
+                <ShieldCheck className="w-4 h-4" /><span>{yukleniyor ? 'Kaydediliyor...' : mudurVarMi ? 'Güncelle' : 'Şube Müdürü Yap'}</span>
               </button>
             </div>
           </div>

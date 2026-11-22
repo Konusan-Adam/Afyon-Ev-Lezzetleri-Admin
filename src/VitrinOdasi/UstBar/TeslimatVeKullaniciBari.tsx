@@ -17,6 +17,7 @@ import { teslimatHafizasiKullan } from '@/src/OrtakHavuz';
 import { ortakSepetHafizasiKullan } from '@/src/OrtakHavuz';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { yerelSiparisleriGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
+import { superAdminMi, yonetimYetkisiVarMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 
 export interface TeslimatVeKullaniciBariOzellikleri {
   teslimatTipi?: 'teslimat' | 'gel_al';
@@ -65,8 +66,12 @@ export const TeslimatVeKullaniciBari: React.FC<TeslimatVeKullaniciBariOzellikler
 
   const rolBilgisiGetir = (rol?: string) => {
     switch (rol) {
+      case 'super_admin':
       case 'yonetici':
         return { metin: 'Süper Admin (Patron)', renk: 'text-amber-400 bg-amber-500/20 border-amber-500/40' };
+      case 'sube_muduru':
+      case 'sube_admin':
+        return { metin: 'Şube Müdürü', renk: 'text-blue-300 bg-blue-500/20 border-blue-500/40' };
       case 'ev_mutfagi':
         return { metin: 'Ev Mutfağı & Aşçı', renk: 'text-purple-300 bg-purple-500/20 border-purple-500/40' };
       case 'ticari_restoran':
@@ -165,7 +170,7 @@ export const TeslimatVeKullaniciBari: React.FC<TeslimatVeKullaniciBariOzellikler
                 className="flex items-center gap-2 bg-[#2A102E] hover:bg-[#3D1843] border border-[#521E5C] px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm"
               >
                 <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FFB703] to-[#8C1D9C] flex items-center justify-center text-white text-[11px] font-bold">
-                  {kullaniciHafizasi.aktifKullanici.rol === 'yonetici' ? '👑' : <User className="w-3.5 h-3.5" />}
+                  {yonetimYetkisiVarMi(kullaniciHafizasi.aktifKullanici.rol) ? '👑' : <User className="w-3.5 h-3.5" />}
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-xs font-bold text-white leading-tight max-w-[130px] truncate">
@@ -209,8 +214,8 @@ export const TeslimatVeKullaniciBari: React.FC<TeslimatVeKullaniciBariOzellikler
                       Hızlı Erişim & Operasyon Masaları
                     </div>
 
-                    {/* 1. Patron Yönetim Masası (Sadece Yönetici) */}
-                    {kullaniciHafizasi.aktifKullanici.rol === 'yonetici' && (
+                    {/* 1. Patron Yönetim Masası (Sadece Yetkili Yönetim Rolleri) */}
+                    {yonetimYetkisiVarMi(kullaniciHafizasi.aktifKullanici.rol) && (
                       <button
                         type="button"
                         onClick={() => {
@@ -238,7 +243,7 @@ export const TeslimatVeKullaniciBari: React.FC<TeslimatVeKullaniciBariOzellikler
                     </button>
 
                     {/* 3. Ev Mutfağı & Aşçı Paneli */}
-                    {(kullaniciHafizasi.aktifKullanici.rol === 'yonetici' ||
+                    {(superAdminMi(kullaniciHafizasi.aktifKullanici.rol) ||
                       kullaniciHafizasi.aktifKullanici.rol === 'ev_mutfagi' ||
                       kullaniciHafizasi.aktifKullanici.rol === 'ticari_restoran') && (
                       <button
@@ -255,7 +260,7 @@ export const TeslimatVeKullaniciBari: React.FC<TeslimatVeKullaniciBariOzellikler
                     )}
 
                     {/* 4. Kurye Dağıtım Paneli */}
-                    {(kullaniciHafizasi.aktifKullanici.rol === 'yonetici' ||
+                    {(superAdminMi(kullaniciHafizasi.aktifKullanici.rol) ||
                       kullaniciHafizasi.aktifKullanici.rol === 'kurye') && (
                       <button
                         type="button"

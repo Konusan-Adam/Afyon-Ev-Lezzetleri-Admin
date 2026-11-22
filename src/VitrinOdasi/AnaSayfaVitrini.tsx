@@ -52,7 +52,7 @@ export const AnaSayfaVitrini: React.FC = () => {
   } = aramaVeFiltreKullan();
 
   const { sepetPaneliAc, sepeteEkle } = sepetHafizasiKullan();
-  const { goruntulenenPanel, panelDegistir } = kullaniciHafizasiKullan();
+  const { goruntulenenPanel, panelDegistir, aktifKullanici } = kullaniciHafizasiKullan();
 
   // Mutfak kimliğine göre mutfak nesnesini bulup vitrinini açar
   const mutfakAcById = async (mutfakId: string) => {
@@ -100,7 +100,7 @@ export const AnaSayfaVitrini: React.FC = () => {
 
   // 4 Farklı Panel Yönlendirmesi
   if (goruntulenenPanel === 'patron') {
-    if (!patronOnayli && !patronGirisOnayliMi()) {
+    if (!patronOnayli || !patronGirisOnayliMi(aktifKullanici)) {
       return <PatronGuvenlikKapisi onYetkilendirildi={() => setPatronOnayli(true)} />;
     }
     return <YonetimPaneli />;

@@ -36,8 +36,8 @@ export const SubeMudurFormGirdileri: React.FC<FormGirdileriProps> = ({
       <label className="text-gray-300 font-bold block mb-1">Giriş Şifresi *</label>
       <div className="relative">
         <Lock className="w-4 h-4 text-purple-400 absolute left-3 top-2.5" />
-        <input type="text" required value={sifre} onChange={e => onSifreChange(e.target.value)}
-          placeholder="Örn: 1234"
+        <input type="text" required minLength={4} value={sifre} onChange={e => onSifreChange(e.target.value)}
+          placeholder="En az 4 karakter şifre"
           className="w-full bg-[#120415] border border-purple-900/80 rounded-xl pl-9 pr-3 py-2 text-white" />
       </div>
     </div>

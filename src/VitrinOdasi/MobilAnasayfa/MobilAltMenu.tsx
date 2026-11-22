@@ -5,6 +5,7 @@ import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { aramaVeFiltreKullan } from '@/src/OrtakHavuz/AramaVeFiltreHafizasi';
 import { yerelSiparisleriGetir, aktifMisafirSiparisSayisiGetir } from '@/src/MalzemeCekmeceleri/useMusteriSiparisleri';
 import { MobilKesfetPenceresi } from './MobilKesfetPenceresi';
+import { yonetimYetkisiVarMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 
 interface MobilAltMenuOzellikleri {
   anasayfayaDon?: () => void;
@@ -91,7 +92,7 @@ export const MobilAltMenu: React.FC<MobilAltMenuOzellikleri> = ({
   const paneleGit = () => {
     setHesapMenusuAcik(false);
     if (!aktifKullanici) return;
-    if (aktifKullanici.rol === 'yonetici') {
+    if (yonetimYetkisiVarMi(aktifKullanici.rol)) {
       panelDegistir('patron');
     } else if (aktifKullanici.rol === 'ev_mutfagi' || aktifKullanici.rol === 'ticari_restoran') {
       panelDegistir('mutfak');
@@ -111,7 +112,10 @@ export const MobilAltMenu: React.FC<MobilAltMenuOzellikleri> = ({
   const rolEtiketiGetir = () => {
     if (!aktifKullanici) return '';
     switch (aktifKullanici.rol) {
+      case 'super_admin':
       case 'yonetici': return '👑 Süper Admin (Patron)';
+      case 'sube_muduru':
+      case 'sube_admin': return '🏢 Şube Müdürü';
       case 'ev_mutfagi': return '👩‍🍳 Onaylı Ev Mutfağı';
       case 'ticari_restoran': return '🏪 Ticari Restoran';
       case 'kurye': return '🛵 Motorlu Kurye';
