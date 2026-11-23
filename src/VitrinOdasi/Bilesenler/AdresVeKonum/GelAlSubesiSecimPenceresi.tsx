@@ -59,11 +59,20 @@ export const GelAlSubesiSecimPenceresi: React.FC = () => {
                     <Store className={`w-4 h-4 ${seciliMi ? 'text-[#DDAF53]' : 'text-purple-400'}`} />
                     <span className="font-bold text-sm text-white">{sube.ad}</span>
                   </div>
-                  {seciliMi && (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-[#DDAF53] bg-amber-950/60 px-2 py-0.5 rounded-full border border-[#DDAF53]/40">
-                      <Check className="w-3 h-3" /> Seçili
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      sube.acik_mi !== false
+                        ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40'
+                        : 'bg-rose-950/70 text-rose-300 border-rose-500/40'
+                    }`}>
+                      {sube.acik_mi !== false ? 'Açık' : 'Kapalı'}
                     </span>
-                  )}
+                    {seciliMi && (
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-[#DDAF53] bg-amber-950/60 px-2 py-0.5 rounded-full border border-[#DDAF53]/40">
+                        <Check className="w-3 h-3" /> Seçili
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-xs text-purple-200/80 flex items-start gap-1.5">
@@ -74,7 +83,9 @@ export const GelAlSubesiSecimPenceresi: React.FC = () => {
                 <div className="flex items-center gap-3 pt-1 border-t border-purple-900/30 text-[11px] text-purple-300/80">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-amber-400" />
-                    {sube.calisma_saatleri}
+                    {sube.acilis_saati && sube.kapanis_saati
+                      ? `${sube.acilis_saati} - ${sube.kapanis_saati}`
+                      : sube.calisma_saatleri || '08:30 - 22:00'}
                   </span>
                   <span className="text-purple-600">•</span>
                   <span className="text-emerald-400 font-medium">⚡ {sube.hazirlanma_suresi}</span>

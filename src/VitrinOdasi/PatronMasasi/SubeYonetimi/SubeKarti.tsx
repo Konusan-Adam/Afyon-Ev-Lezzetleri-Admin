@@ -1,6 +1,7 @@
 import React from 'react';
 import { Store, Clock, Phone, Video, ShieldCheck, UserCheck, Power, Edit3, Trash2, CheckCircle } from 'lucide-react';
 import { GelAlSubesi } from '@/src/veritabani/VeriTipleri';
+import { SubeCalismaSaatiKontrolu, SubeSaatDurumVerisi } from './SubeCalismaSaatiKontrolu';
 
 interface SubeKartiProps {
   sube: GelAlSubesi;
@@ -8,6 +9,7 @@ interface SubeKartiProps {
   acikSiparisSayisi: number;
   onSec: () => void;
   onDurumDegistir: () => void;
+  onSaatVeDurumKaydet: (veri: SubeSaatDurumVerisi) => Promise<boolean>;
   onYayinDegistir: () => void;
   onDuzenle: () => void;
   onMudurAta: () => void;
@@ -20,6 +22,7 @@ export const SubeKarti: React.FC<SubeKartiProps> = ({
   acikSiparisSayisi,
   onSec,
   onDurumDegistir,
+  onSaatVeDurumKaydet,
   onYayinDegistir,
   onDuzenle,
   onMudurAta,
@@ -69,6 +72,8 @@ export const SubeKarti: React.FC<SubeKartiProps> = ({
             <span>⚡ {acikSiparisSayisi} Açık Sipariş</span>
           </div>
         </div>
+
+        <SubeCalismaSaatiKontrolu sube={sube} onKaydet={onSaatVeDurumKaydet} />
 
         <div className="flex items-center justify-between text-xs pt-1">
           <div className="text-[11px] text-gray-300 flex items-center gap-1">

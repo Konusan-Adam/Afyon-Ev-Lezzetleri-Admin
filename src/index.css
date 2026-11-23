@@ -100,7 +100,9 @@ html.acik-tema h4:not([class*="text-amber"]) {
     visibility: hidden !important;
   }
   .yazdirilabilir-fatura,
-  .yazdirilabilir-fatura * {
+  .yazdirilabilir-fatura *,
+  .yazdirilabilir-delil-tutanagi,
+  .yazdirilabilir-delil-tutanagi * {
     visibility: visible !important;
   }
   .yazdirilabilir-fatura {
@@ -110,6 +112,22 @@ html.acik-tema h4:not([class*="text-amber"]) {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 24px !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  .yazdirilabilir-delil-tutanagi {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 20px !important;
     background: #ffffff !important;
     color: #111827 !important;
     box-shadow: none !important;

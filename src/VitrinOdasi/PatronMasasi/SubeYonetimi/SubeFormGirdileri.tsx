@@ -50,13 +50,13 @@ export const SubeFormGirdileri: React.FC<FormProps> = ({
     <div className="grid grid-cols-2 gap-2">
       <div>
         <label className="text-gray-300 font-bold block mb-1">Açılış Saati</label>
-        <input type="text" value={acilisSaati} onChange={e => setAcilisSaati(e.target.value)}
-          placeholder="08:30" className="w-full bg-[#120415] border border-purple-900/80 rounded-xl px-2.5 py-2 text-white" />
+        <input type="time" value={acilisSaati} onChange={e => setAcilisSaati(e.target.value)}
+          className="w-full bg-[#120415] border border-purple-900/80 rounded-xl px-2.5 py-2 text-white font-mono" />
       </div>
       <div>
         <label className="text-gray-300 font-bold block mb-1">Kapanış Saati</label>
-        <input type="text" value={kapanisSaati} onChange={e => setKapanisSaati(e.target.value)}
-          placeholder="22:00" className="w-full bg-[#120415] border border-purple-900/80 rounded-xl px-2.5 py-2 text-white" />
+        <input type="time" value={kapanisSaati} onChange={e => setKapanisSaati(e.target.value)}
+          className="w-full bg-[#120415] border border-purple-900/80 rounded-xl px-2.5 py-2 text-white font-mono" />
       </div>
     </div>
     <div className="space-y-1">

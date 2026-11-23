@@ -17,7 +17,8 @@ import {
   Bell,
   MapPin,
   Percent,
-  Megaphone
+  Megaphone,
+  FileCheck2
 } from 'lucide-react';
 import { kullaniciHafizasiKullan } from '@/src/OrtakHavuz/KullaniciHafizasi';
 import { PatronBildirimKutusu, type BildirimYonlendirmeHedefi } from './PatronBildirimKutusu';
@@ -38,6 +39,7 @@ import { YonetimGelAlSubeleri } from './YonetimGelAlSubeleri';
 import { YonetimMusteriBirlesik } from './YonetimMusteriBirlesik';
 import { YonetimSistemBirlesik } from './YonetimSistemBirlesik';
 import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/YonetimLezzetDanismani';
+import { HukukiDelilMerkezi } from './HukukiDelilMerkezi/HukukiDelilMerkezi';
 
 type YonetimSekmesi =
   | 'mutfaklar'
@@ -50,6 +52,7 @@ type YonetimSekmesi =
   | 'ozet'
   | 'gel_al_subeleri'
   | 'musteriler'
+  | 'hukuki_delil'
   | 'sistem_ayarlari'
   | 'lezzet_danismani';
 
@@ -119,6 +122,7 @@ export const YonetimPaneli: React.FC = () => {
     { id: 'ozet', baslik: 'Genel Özet & Raporlar', ikon: BarChart3 },
     { id: 'gel_al_subeleri', baslik: 'Şube & Gel-Al', ikon: MapPin },
     { id: 'musteriler', baslik: 'Müşteri & Yorumlar', ikon: Users },
+    { id: 'hukuki_delil', baslik: 'Hukuki Delil & Damga', ikon: FileCheck2, rozet: 'Salt-Okunur' },
     { id: 'sistem_ayarlari', baslik: 'Sistem, Ödeme & Site', ikon: Database },
     { id: 'lezzet_danismani', baslik: 'Lezzet Danışmanı', ikon: Sparkles }
   ];
@@ -135,6 +139,7 @@ export const YonetimPaneli: React.FC = () => {
       case 'ozet': return 'Genel Durum, Kasa ve Mali Raporlar';
       case 'gel_al_subeleri': return 'Şube & Gel-Al Yönetim Modülü';
       case 'musteriler': return 'Müşteriler, Cüzdan ve Yorum Yönetimi';
+      case 'hukuki_delil': return 'Hukuki Delil & Zaman Damgası Çıktı Merkezi';
       case 'sistem_ayarlari': return 'Ödeme Seçenekleri, Sanal POS, Arşiv, Reklam, Hukuk ve Footer';
       case 'lezzet_danismani': return 'Lezzet Danışmanı Yönetimi';
       default: return 'Patron Masası';
@@ -323,6 +328,7 @@ export const YonetimPaneli: React.FC = () => {
           {aktifSekme === 'ozet' && <YonetimOzetBirlesik />}
           {aktifSekme === 'gel_al_subeleri' && <YonetimGelAlSubeleri subeYonlendirme={subeYonlendirme} />}
           {aktifSekme === 'musteriler' && <YonetimMusteriBirlesik />}
+          {aktifSekme === 'hukuki_delil' && <HukukiDelilMerkezi />}
           {aktifSekme === 'sistem_ayarlari' && <YonetimSistemBirlesik />}
           {aktifSekme === 'lezzet_danismani' && <YonetimLezzetDanismani />}
         </main>

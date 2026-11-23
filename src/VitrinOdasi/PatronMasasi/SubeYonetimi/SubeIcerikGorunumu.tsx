@@ -4,6 +4,7 @@ import { SubeAltSekme } from './SubeAltNavigasyon';
 import { SubeKartListesi } from './SubeKartListesi';
 import { SubeStokDenetimi } from './SubeStokDenetimi';
 import { SubeSiparisListesi } from './SubeSiparisListesi';
+import { SubeSaatDurumVerisi } from './SubeCalismaSaatiKontrolu';
 
 interface IcerikProps {
   altSekme: SubeAltSekme;
@@ -13,6 +14,7 @@ interface IcerikProps {
   siparisler: SubeSiparisTipi[];
   onSubeSec: (id: string) => void;
   onDurumDegistir: (sube: GelAlSubesi) => void;
+  onSaatVeDurumKaydet: (sube: GelAlSubesi, veri: SubeSaatDurumVerisi) => Promise<boolean>;
   onYayinDegistir: (sube: GelAlSubesi) => void;
   onDuzenle: (sube: GelAlSubesi) => void;
   onMudurAta: (sube: GelAlSubesi) => void;
@@ -21,7 +23,7 @@ interface IcerikProps {
 
 export const SubeIcerikGorunumu: React.FC<IcerikProps> = ({
   altSekme, subeler, seciliSubeId, seciliSubeAdi, siparisler,
-  onSubeSec, onDurumDegistir, onYayinDegistir, onDuzenle, onMudurAta, onSil
+  onSubeSec, onDurumDegistir, onSaatVeDurumKaydet, onYayinDegistir, onDuzenle, onMudurAta, onSil
 }) => {
   if (altSekme === 'stoklar') {
     return <SubeStokDenetimi seciliSubeId={seciliSubeId} subeAdi={seciliSubeAdi} />;
@@ -36,6 +38,7 @@ export const SubeIcerikGorunumu: React.FC<IcerikProps> = ({
       siparisler={siparisler}
       onSubeSec={onSubeSec}
       onDurumDegistir={onDurumDegistir}
+      onSaatVeDurumKaydet={onSaatVeDurumKaydet}
       onYayinDegistir={onYayinDegistir}
       onDuzenle={onDuzenle}
       onMudurAta={onMudurAta}

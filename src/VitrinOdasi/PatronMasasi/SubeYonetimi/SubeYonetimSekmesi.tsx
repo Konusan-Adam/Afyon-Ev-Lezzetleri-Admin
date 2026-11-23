@@ -77,6 +77,7 @@ export const SubeYonetimSekmesi: React.FC<SubeYonetimSekmesiProps> = ({ subeYonl
         altSekme={altSekme} subeler={goruntulenenSubeler} seciliSubeId={seciliSubeId} seciliSubeAdi={seciliSube?.ad || 'Şube'}
         siparisler={siparisler} onSubeSec={id => { setSeciliSubeId(id); setAltSekme('stoklar'); }}
         onDurumDegistir={s => subeGuncelle(s.id || s.kimlik || '', { acik_mi: !(s.acik_mi !== false) })}
+        onSaatVeDurumKaydet={(s, veri) => subeGuncelle(s.id || s.kimlik || '', veri)}
         onYayinDegistir={s => subeGuncelle(s.id || s.kimlik || '', { canli_yayin_aktif_mi: !(s.canli_yayin_aktif_mi === true) })}
         onDuzenle={s => { setDuzenlenenSube(s); setDuzenleModalAcik(true); }}
         onMudurAta={s => setMudurModalSube(s)}
