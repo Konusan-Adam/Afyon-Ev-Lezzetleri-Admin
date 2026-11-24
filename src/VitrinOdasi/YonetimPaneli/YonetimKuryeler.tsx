@@ -6,6 +6,7 @@ import { hareketlerdenBakiyeHesapla } from '@/src/MalzemeCekmeceleri/Finans/hake
 import { TestKurye, HakedisCekimTalebi } from '@/src/veritabani/CanliVeriYardimcisi';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { hukukiDelilDamgalaVeKaydet } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 export const YonetimKuryeler: React.FC = () => {
   const { talepler, talepDurumGuncelle } = useCanliHakedisTalepleri();
@@ -181,6 +182,20 @@ export const YonetimKuryeler: React.FC = () => {
         console.error('Kurye askı durumu Firebase güncelleme hatası:', err);
       }
     }
+
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'ozel_onay',
+      sozlesmeTuru: 'yetkili_hesap_onayi',
+      sozlesmeVersiyonu: '1.0.0',
+      ilgiliKayitId: id,
+      onaylandiMi: yeniOnayli,
+      ekDetay: {
+        hedefTipi: 'kurye',
+        kuryeAdi: kurye.ad_soyad,
+        hedefTelefon: kurye.telefon,
+        aksiyon: yeniAskida ? 'askiya_alindi' : 'onaylandi_aktif',
+      },
+    });
   };
 
   const durumDegistir = async (id: string, yeniDurum: 'bosta' | 'yolda' | 'molada') => {

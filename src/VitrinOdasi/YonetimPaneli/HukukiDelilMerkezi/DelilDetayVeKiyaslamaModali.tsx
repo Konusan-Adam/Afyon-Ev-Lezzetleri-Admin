@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, CheckCircle2, AlertTriangle, HelpCircle, Printer, FileKey2, Shield } from 'lucide-react';
+import { X, CheckCircle2, AlertTriangle, HelpCircle, Printer, FileKey2, Shield, ShieldCheck, Loader2 } from 'lucide-react';
 import { HukukiOnayLogu, HukukiSozlesme } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/tipler';
 import { sunucuZamaniBicimlendir } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/useCanliHukukiDeliller';
 import {
@@ -11,6 +11,10 @@ import {
   sozlesmeMetinUyumuDogrula,
   tsrJetonunuIndir,
 } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilCiktiServisi';
+import {
+  sunucudaZamanDamgasiDogrula,
+  SunucuDogrulamaSonucu,
+} from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 interface DelilDetayVeKiyaslamaModaliProps {
   log: HukukiOnayLogu | null;
@@ -27,11 +31,14 @@ export const DelilDetayVeKiyaslamaModali: React.FC<DelilDetayVeKiyaslamaModaliPr
 }) => {
   const [uyumSonucu, setUyumSonucu] = useState<MetinUyumSonucu | null>(null);
   const [kontrolEdiliyor, setKontrolEdiliyor] = useState(false);
+  const [damgaDogrulama, setDamgaDogrulama] = useState<SunucuDogrulamaSonucu | null>(null);
+  const [damgaDogrulaniyor, setDamgaDogrulaniyor] = useState(false);
 
   const ilgiliSozlesme = log ? sozlesmeHaritasi[log.sozlesmeTuru] : undefined;
 
   useEffect(() => {
     let iptal = false;
+    setDamgaDogrulama(null);
     if (!log) {
       setUyumSonucu(null);
       return;
@@ -48,6 +55,14 @@ export const DelilDetayVeKiyaslamaModali: React.FC<DelilDetayVeKiyaslamaModaliPr
       iptal = true;
     };
   }, [log, ilgiliSozlesme]);
+
+  const sunucuDogrulamasiCalistir = async () => {
+    if (!log) return;
+    setDamgaDogrulaniyor(true);
+    const sonuc = await sunucudaZamanDamgasiDogrula(log);
+    setDamgaDogrulama(sonuc);
+    setDamgaDogrulaniyor(false);
+  };
 
   if (!log) return null;
 
@@ -189,6 +204,42 @@ export const DelilDetayVeKiyaslamaModali: React.FC<DelilDetayVeKiyaslamaModaliPr
             <div className="break-all text-gray-300"><strong className="text-gray-400">Özet Hash (SHA-256):</strong> {log.ozetHash || '-'}</div>
             <div className="break-all text-gray-300"><strong className="text-gray-400">Sözleşme Metin Hash:</strong> {log.sozlesmeMetinHash || '-'}</div>
             <div className="break-all text-gray-300"><strong className="text-gray-400">Sunucu İmzası:</strong> {log.sunucuImzasi || '-'}</div>
+
+            {damgaDogrulama && (
+              <div
+                className={`mt-2 p-3 rounded-xl border font-sans text-[11px] space-y-1 ${
+                  damgaDogrulama.gecerli
+                    ? 'bg-emerald-950/70 border-emerald-500/60 text-emerald-200'
+                    : 'bg-rose-950/70 border-rose-500/60 text-rose-200'
+                }`}
+              >
+                <div className="font-black flex items-center gap-1.5">
+                  {damgaDogrulama.gecerli ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  )}
+                  <span>
+                    {damgaDogrulama.gecerli
+                      ? 'Sunucu Doğrulaması Başarılı — Zaman Damgası Geçerli'
+                      : damgaDogrulama.mesaj || 'Zaman Damgası Doğrulanamadı'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[10px] font-mono">
+                  <span>SHA-256 Format: {damgaDogrulama.ozetHashGecerli ? 'Geçerli ✓' : 'Hatalı ✕'}</span>
+                  {damgaDogrulama.rfc3161?.mevcut && (
+                    <span>
+                      RFC 3161 DER: {damgaDogrulama.rfc3161.onayliMi ? 'PKI Onaylı ✓' : 'Geçersiz ✕'} | Özet Eşleşmesi:{' '}
+                      {damgaDogrulama.rfc3161.ozetEslesiyorMu ? 'Eşleşiyor ✓' : 'Farklı ✕'}
+                    </span>
+                  )}
+                  {damgaDogrulama.sunucuImzasiGecerli !== null && (
+                    <span>Sunucu HMAC: {damgaDogrulama.sunucuImzasiGecerli ? 'Doğrulandı ✓' : 'Eşleşmedi ✕'}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {ekDetayMetni && (
               <div className="pt-2">
                 <div className="text-gray-400 font-bold mb-1">Ek Detay (ekDetay):</div>
@@ -205,6 +256,17 @@ export const DelilDetayVeKiyaslamaModali: React.FC<DelilDetayVeKiyaslamaModaliPr
             Salt-okunur delil kaydı — düzenleme ve silme kapalıdır.
           </span>
           <div className="flex flex-wrap items-center gap-2">
+            {Boolean(log.ozetHash) && (
+              <button
+                type="button"
+                disabled={damgaDogrulaniyor}
+                onClick={sunucuDogrulamasiCalistir}
+                className="px-3.5 py-2 rounded-xl bg-sky-800 hover:bg-sky-700 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {damgaDogrulaniyor ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                <span>Sunucuda Doğrula</span>
+              </button>
+            )}
             {Boolean(log.tsaTokenBase64) && (
               <button
                 type="button"

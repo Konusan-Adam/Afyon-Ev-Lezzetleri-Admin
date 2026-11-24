@@ -6,6 +6,7 @@ import {
   paytrBaglantiTestEt,
   PaytrOperasyonAyarlari
 } from '@/src/MalzemeCekmeceleri/Finans/paytrAyarServisi';
+import { hukukiDelilDamgalaVeKaydet } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 export const YonetimPaytrAyarlari: React.FC = () => {
   const { ayarlar: canliAyarlar, paytrAyarlariniKaydet } = useCanliPaytrAyarlari();
@@ -40,6 +41,21 @@ export const YonetimPaytrAyarlari: React.FC = () => {
     e.preventDefault();
     const ok = await paytrAyarlariniKaydet(form);
     if (ok) {
+      void hukukiDelilDamgalaVeKaydet({
+        islemTuru: 'ozel_onay',
+        sozlesmeTuru: 'finansal_ayar_degisikligi',
+        sozlesmeVersiyonu: '1.0.0',
+        ilgiliKayitId: 'paytr_ayarlari',
+        onaylandiMi: true,
+        ekDetay: {
+          ayarGrubu: 'paytr_ayarlari',
+          onlineOdemeAktif: form.onlineOdemeAktif,
+          testModu: form.testModu,
+          taksitAktif: form.taksitAktif,
+          maksimumTaksit: form.maksimumTaksit,
+          demoSimulasyonAktif: form.demoSimulasyonAktif,
+        },
+      });
       setKaydedildi(true);
       setTimeout(() => setKaydedildi(false), 3000);
     }

@@ -37,6 +37,7 @@ export const SuperAdminHukukPaneli: React.FC = () => {
     : (sozlesmeAnahtarlari[0] || 'mesafeli_satis');
   const [seciliTur, setSeciliTur] = useState<string>(ilkAnahtar);
   const [duzenlenenMetin, setDuzenlenenMetin] = useState(sozlesmeler[ilkAnahtar]?.icerik || '');
+  const [duzenlenenVersiyon, setDuzenlenenVersiyon] = useState(sozlesmeler[ilkAnahtar]?.versiyon || '1.0.0');
   const [kaydedildiMesaji, setKaydedildiMesaji] = useState(false);
   const [silmeOnayTur, setSilmeOnayTur] = useState<string | null>(null);
 
@@ -46,6 +47,7 @@ export const SuperAdminHukukPaneli: React.FC = () => {
       setSozlesmeler(guncel);
       if (guncel[seciliTur]) {
         setDuzenlenenMetin(guncel[seciliTur].icerik);
+        setDuzenlenenVersiyon(guncel[seciliTur].versiyon || '1.0.0');
       }
     });
     hukukiLoglariCanliGetir().then((guncelLoglar) => {
@@ -72,6 +74,7 @@ export const SuperAdminHukukPaneli: React.FC = () => {
   const sozlesmeDegistir = (tur: string) => {
     setSeciliTur(tur);
     setDuzenlenenMetin(sozlesmeler[tur]?.icerik || '');
+    setDuzenlenenVersiyon(sozlesmeler[tur]?.versiyon || '1.0.0');
     setKaydedildiMesaji(false);
   };
 
@@ -79,6 +82,7 @@ export const SuperAdminHukukPaneli: React.FC = () => {
     if (!sozlesmeler[seciliTur]) return;
     const guncel: HukukiSozlesme = {
       ...sozlesmeler[seciliTur],
+      versiyon: duzenlenenVersiyon.trim() || sozlesmeler[seciliTur].versiyon || '1.0.0',
       icerik: duzenlenenMetin
     };
     sozlesmeGuncelle(guncel);
@@ -93,6 +97,7 @@ export const SuperAdminHukukPaneli: React.FC = () => {
       sozlesmeGuncelle(varsayilan);
       setSozlesmeler(hukukiSozlesmeleriGetir());
       setDuzenlenenMetin(varsayilan.icerik);
+      setDuzenlenenVersiyon(varsayilan.versiyon || '1.0.0');
       setKaydedildiMesaji(true);
       setTimeout(() => setKaydedildiMesaji(false), 3000);
     }
@@ -165,7 +170,6 @@ export const SuperAdminHukukPaneli: React.FC = () => {
   // Logları CSV İndir
   const loglariCsvIndir = () => {
     if (loglar.length === 0) {
-      alert('İndirilecek hukuki log kaydı bulunamadı.');
       return;
     }
 
@@ -383,9 +387,18 @@ export const SuperAdminHukukPaneli: React.FC = () => {
                       Kod: {aktifSozlesme.tur}
                     </span>
                   </h3>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    Versiyon: {aktifSozlesme.versiyon} | Son Güncelleme: {aktifSozlesme.guncellenmeTarihi} | Konum: {aktifSozlesme.konum || 'genel'}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-400 mt-1">
+                    <label className="inline-flex items-center gap-1.5">
+                      <span>Versiyon:</span>
+                      <input
+                        type="text"
+                        value={duzenlenenVersiyon}
+                        onChange={(e) => setDuzenlenenVersiyon(e.target.value)}
+                        className="w-20 bg-[#1A081D] border border-[#521E5C] rounded-lg px-2 py-0.5 text-amber-300 font-mono text-[11px] focus:outline-none focus:border-[#DDAF53]"
+                      />
+                    </label>
+                    <span>| Son Güncelleme: {aktifSozlesme.guncellenmeTarihi} | Konum: {aktifSozlesme.konum || 'genel'}</span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">

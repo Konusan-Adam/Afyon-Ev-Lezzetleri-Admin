@@ -1,6 +1,7 @@
 import { HukukiSozlesme, HukukiOnayLogu, CerezTercihleri, SozlesmeTuru } from './tipler';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { hukukiDelilDamgalaVeKaydet } from './hukukiDelilServisi';
 
 const YEREL_SOZLESMELER_ANAHTARI = 'afyon_hukuki_sozlesmeler_v3';
 const YEREL_LOGLAR_ANAHTARI = 'afyon_hukuki_onay_loglari_v2';
@@ -189,6 +190,20 @@ export const sozlesmeGuncelle = (sozlesme: HukukiSozlesme): boolean => {
     if (canliFirebaseAktifMi()) {
       belgeKaydet('sozlesmeler', sozlesme.tur, guncelSozlesme).catch(() => {});
     }
+
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'sozlesme_guncelleme',
+      sozlesmeTuru: guncelSozlesme.tur,
+      sozlesmeVersiyonu: guncelSozlesme.versiyon || '1.0.0',
+      sozlesmeMetin: guncelSozlesme.icerik,
+      ilgiliKayitId: guncelSozlesme.tur,
+      onaylandiMi: true,
+      ekDetay: {
+        islem: 'sozlesme_guncelleme',
+        baslik: guncelSozlesme.baslik,
+        konum: guncelSozlesme.konum || 'genel',
+      },
+    });
     return true;
   } catch (e) {
     console.error('Sözleşme güncellenemedi:', e);
@@ -219,6 +234,20 @@ export const yeniSozlesmeEkle = (sozlesme: Omit<HukukiSozlesme, 'guncellenmeTari
     if (canliFirebaseAktifMi()) {
       belgeKaydet('sozlesmeler', kod, yeni).catch(() => {});
     }
+
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'sozlesme_guncelleme',
+      sozlesmeTuru: kod,
+      sozlesmeVersiyonu: yeni.versiyon || '1.0.0',
+      sozlesmeMetin: yeni.icerik,
+      ilgiliKayitId: kod,
+      onaylandiMi: true,
+      ekDetay: {
+        islem: 'yeni_sozlesme_ekleme',
+        baslik: yeni.baslik,
+        konum: yeni.konum || 'genel',
+      },
+    });
     return true;
   } catch (e) {
     console.error('Yeni sözleşme eklenemedi:', e);

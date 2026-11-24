@@ -9,6 +9,7 @@ import {
 import { patronBildirimiEkle } from './PatronBildirimServisi';
 import { hakedistenFaturaKes } from './Finans/otomatikFaturaUretici';
 import { talepOdemeHareketiKaydet } from './Finans/hakedisDefteriServisi';
+import { hukukiDelilDamgalaVeKaydet } from './HukukVeSozlesmeler/hukukiDelilServisi';
 
 export const BASLANGIC_HAKEDIS_TALEPLERI: HakedisCekimTalebi[] = [];
 
@@ -65,6 +66,22 @@ export function useCanliHakedisTalepleri() {
       if (yeniDurum === 'odendi') {
         talepOdemeHareketiKaydet(paket).catch(() => {});
       }
+      if (yeniDurum === 'odendi' || yeniDurum === 'reddedildi') {
+        void hukukiDelilDamgalaVeKaydet({
+          islemTuru: 'hakedis',
+          sozlesmeTuru: 'tedarikci_hakedis_mutabakati',
+          sozlesmeVersiyonu: '1.0.0',
+          ilgiliKayitId: talepId,
+          onaylandiMi: yeniDurum === 'odendi',
+          ekDetay: {
+            aksiyon: yeniDurum,
+            tutar: guncel.tutar,
+            aliciAdi: guncel.mutfak_adi || guncel.kurye_adi || guncel.hesap_sahibi || '',
+            iban: guncel.iban || '',
+            not: not || '',
+          },
+        });
+      }
       return true;
     } catch (err) {
       console.warn('Hakediş durum güncelleme hatası:', err);
@@ -100,6 +117,21 @@ export function useCanliHakedisTalepleri() {
 
       await belgeKaydet('hakedis_talepleri', id, paket);
       talepOdemeHareketiKaydet(paket).catch(() => {});
+      void hukukiDelilDamgalaVeKaydet({
+        islemTuru: 'hakedis',
+        sozlesmeTuru: 'tedarikci_hakedis_mutabakati',
+        sozlesmeVersiyonu: '1.0.0',
+        ilgiliKayitId: id,
+        onaylandiMi: true,
+        ekDetay: {
+          aksiyon: 'toplu_odeme',
+          partiNo,
+          tutar: hedef.tutar,
+          aliciAdi: hedef.mutfak_adi || hedef.kurye_adi || hedef.hesap_sahibi || '',
+          iban: hedef.iban || '',
+          not: dekontNotu || '',
+        },
+      });
       setTalepler(onceki => onceki.map(t => t.id === id ? paket : t));
       islenenSayi++;
     }

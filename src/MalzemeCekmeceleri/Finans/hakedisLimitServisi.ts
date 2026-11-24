@@ -4,6 +4,7 @@ import {
   koleksiyonGetir,
   koleksiyonuCanliDinle
 } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { hukukiDelilDamgalaVeKaydet } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 export interface HakedisLimitAyarlari {
   id?: string;
@@ -52,7 +53,22 @@ export function useHakedisLimitleri() {
       guncellenme_zamani: new Date().toISOString()
     };
     setLimitler(yeni);
-    return belgeKaydet('genel_ayarlar', 'hakedis_limitleri', yeni);
+    const sonuc = await belgeKaydet('genel_ayarlar', 'hakedis_limitleri', yeni);
+    if (sonuc) {
+      void hukukiDelilDamgalaVeKaydet({
+        islemTuru: 'ozel_onay',
+        sozlesmeTuru: 'finansal_ayar_degisikligi',
+        sozlesmeVersiyonu: '1.0.0',
+        ilgiliKayitId: 'hakedis_limitleri',
+        onaylandiMi: true,
+        ekDetay: {
+          ayarGrubu: 'hakedis_limitleri',
+          mutfakAltLimit: yeni.mutfakAltLimit,
+          kuryeAltLimit: yeni.kuryeAltLimit,
+        },
+      });
+    }
+    return sonuc;
   };
 
   return { limitler, yukleniyor, limitleriKaydet };

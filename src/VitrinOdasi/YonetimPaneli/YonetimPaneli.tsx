@@ -39,7 +39,7 @@ import { YonetimGelAlSubeleri } from './YonetimGelAlSubeleri';
 import { YonetimMusteriBirlesik } from './YonetimMusteriBirlesik';
 import { YonetimSistemBirlesik } from './YonetimSistemBirlesik';
 import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/YonetimLezzetDanismani';
-import { HukukiDelilMerkezi } from './HukukiDelilMerkezi/HukukiDelilMerkezi';
+import { HukukVeZamanDamgasiMasasi } from './HukukiDelilMerkezi/HukukVeZamanDamgasiMasasi';
 
 type YonetimSekmesi =
   | 'mutfaklar'
@@ -328,7 +328,7 @@ export const YonetimPaneli: React.FC = () => {
           {aktifSekme === 'ozet' && <YonetimOzetBirlesik />}
           {aktifSekme === 'gel_al_subeleri' && <YonetimGelAlSubeleri subeYonlendirme={subeYonlendirme} />}
           {aktifSekme === 'musteriler' && <YonetimMusteriBirlesik />}
-          {aktifSekme === 'hukuki_delil' && <HukukiDelilMerkezi />}
+          {aktifSekme === 'hukuki_delil' && <HukukVeZamanDamgasiMasasi />}
           {aktifSekme === 'sistem_ayarlari' && <YonetimSistemBirlesik />}
           {aktifSekme === 'lezzet_danismani' && <YonetimLezzetDanismani />}
         </main>

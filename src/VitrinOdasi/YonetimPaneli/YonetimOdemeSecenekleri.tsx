@@ -6,6 +6,7 @@ import {
   type OdemeSecenekTipi,
 } from '@/src/MalzemeCekmeceleri/Finans/odemeSecenekleriServisi';
 import { useCanliPaytrAyarlari } from '@/src/MalzemeCekmeceleri/Finans/paytrAyarServisi';
+import { hukukiDelilDamgalaVeKaydet } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 export const YonetimOdemeSecenekleri: React.FC = () => {
   const { secenekler: canliSecenekler, odemeSecenekleriniKaydet } = useCanliOdemeSecenekleri();
@@ -60,6 +61,20 @@ export const YonetimOdemeSecenekleri: React.FC = () => {
     ]);
 
     if (secenekOk && paytrOk) {
+      void hukukiDelilDamgalaVeKaydet({
+        islemTuru: 'ozel_onay',
+        sozlesmeTuru: 'finansal_ayar_degisikligi',
+        sozlesmeVersiyonu: '1.0.0',
+        ilgiliKayitId: 'odeme_secenekleri',
+        onaylandiMi: true,
+        ekDetay: {
+          ayarGrubu: 'odeme_secenekleri',
+          kapidaNakitAktif: form.kapidaNakitAktif,
+          kapidaKartAktif: form.kapidaKartAktif,
+          onlineOdemeAktif: onlineAktif,
+          varsayilanYontem: duzeltilmisVarsayilan,
+        },
+      });
       setKaydedildi(true);
       setTimeout(() => setKaydedildi(false), 3000);
     } else {

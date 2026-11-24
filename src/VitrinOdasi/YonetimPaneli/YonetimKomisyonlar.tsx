@@ -3,6 +3,7 @@ import { Percent, Plus, Trash2, Edit3, X, Check } from 'lucide-react';
 import { useKomisyonYonetimi } from '@/src/MalzemeCekmeceleri/useKomisyonYonetimi';
 import { KomisyonAyarTipi } from '@/src/veritabani/VeriTipleri';
 import { belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { hukukiDelilDamgalaVeKaydet } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 export const YonetimKomisyonlar: React.FC = () => {
   const { ayarlar } = useKomisyonYonetimi();
@@ -16,12 +17,38 @@ export const YonetimKomisyonlar: React.FC = () => {
       id: ayarId,
       guncellenme_tarihi: new Date().toISOString()
     });
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'ozel_onay',
+      sozlesmeTuru: 'finansal_ayar_degisikligi',
+      sozlesmeVersiyonu: '1.0.0',
+      ilgiliKayitId: ayarId,
+      onaylandiMi: true,
+      ekDetay: {
+        ayarGrubu: 'komisyon_ayarlari',
+        aksiyon: duzenlenenAyar.id ? 'guncelleme' : 'ekleme',
+        tip: duzenlenenAyar.tip || 'genel',
+        oran: duzenlenenAyar.oran ?? 0,
+        platformSabitUcret: duzenlenenAyar.platformSabitUcret ?? 0,
+        hedefId: duzenlenenAyar.hedefId || null,
+      },
+    });
     setDuzenlenenAyar(null);
   };
 
   const sil = async (id: string) => {
     if (confirm('Bu komisyon kuralını silmek istediğinize emin misiniz?')) {
       await belgeSil('komisyon_ayarlari', id);
+      void hukukiDelilDamgalaVeKaydet({
+        islemTuru: 'ozel_onay',
+        sozlesmeTuru: 'finansal_ayar_degisikligi',
+        sozlesmeVersiyonu: '1.0.0',
+        ilgiliKayitId: id,
+        onaylandiMi: true,
+        ekDetay: {
+          ayarGrubu: 'komisyon_ayarlari',
+          aksiyon: 'silme',
+        },
+      });
     }
   };
 

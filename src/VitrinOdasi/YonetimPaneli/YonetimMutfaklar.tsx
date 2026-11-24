@@ -29,6 +29,7 @@ import { YonetimMutfakAfisleri } from './YonetimMutfaklar/YonetimMutfakAfisleri'
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
+import { hukukiDelilDamgalaVeKaydet } from '@/src/MalzemeCekmeceleri/HukukVeSozlesmeler/hukukiDelilServisi';
 
 export interface MutfakYonlendirmeBilgisi {
   altSekme: 'ev_mutfaklari' | 'ticari_mutfaklar' | 'mutfak_afisleri' | 'hakedisler_odemeler';
@@ -173,6 +174,7 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
   };
 
   const askiyaAlDegistir = async (id: string) => {
+    const hedef = mutfakListesi.find(m => m.id === id);
     let yeniAskida = false;
     setMutfakListesi(onceki => onceki.map(m => {
       const askida = (m as any).askida_mi;
@@ -191,6 +193,19 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
         console.warn('Mutfak askıya alma hatası:', err);
       }
     }
+
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'ozel_onay',
+      sozlesmeTuru: 'yetkili_hesap_onayi',
+      sozlesmeVersiyonu: '1.0.0',
+      ilgiliKayitId: id,
+      onaylandiMi: !yeniAskida,
+      ekDetay: {
+        hedefTipi: 'mutfak_asci',
+        mutfakAdi: hedef?.ad || '',
+        aksiyon: yeniAskida ? 'askiya_alindi' : 'aktif_edildi',
+      },
+    });
   };
 
   const hijyenDurumDegistir = async (mutfakId: string) => {
@@ -242,6 +257,20 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
         console.warn('Mutfak hijyen onay kaydetme hatası:', err);
       }
     }
+
+    const hedef = mutfakListesi.find(m => m.id === mutfakId);
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'ozel_onay',
+      sozlesmeTuru: 'yetkili_hesap_onayi',
+      sozlesmeVersiyonu: '1.0.0',
+      ilgiliKayitId: mutfakId,
+      onaylandiMi: yeniHijyen,
+      ekDetay: {
+        hedefTipi: 'mutfak_hijyen_belgesi',
+        mutfakAdi: hedef?.ad || '',
+        aksiyon: yeniHijyen ? 'hijyen_onaylandi' : 'hijyen_onayi_kaldirildi',
+      },
+    });
   };
 
   const muafiyetDurumDegistir = async (mutfakId: string) => {
@@ -293,6 +322,20 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
         console.warn('Mutfak muafiyet onay kaydetme hatası:', err);
       }
     }
+
+    const hedef = mutfakListesi.find(m => m.id === mutfakId);
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'ozel_onay',
+      sozlesmeTuru: 'yetkili_hesap_onayi',
+      sozlesmeVersiyonu: '1.0.0',
+      ilgiliKayitId: mutfakId,
+      onaylandiMi: yeniMuafiyet,
+      ekDetay: {
+        hedefTipi: 'mutfak_vergi_muafiyet',
+        mutfakAdi: hedef?.ad || '',
+        aksiyon: yeniMuafiyet ? 'muafiyet_onaylandi' : 'muafiyet_onayi_kaldirildi',
+      },
+    });
   };
 
   const mutfakOnayla = async (mutfakId: string, onayVer: boolean) => {
@@ -354,6 +397,20 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
         console.warn('Mutfak onay güncelleme hatası:', err);
       }
     }
+
+    const hedef = mutfakListesi.find(m => m.id === mutfakId);
+    void hukukiDelilDamgalaVeKaydet({
+      islemTuru: 'ozel_onay',
+      sozlesmeTuru: 'yetkili_hesap_onayi',
+      sozlesmeVersiyonu: '1.0.0',
+      ilgiliKayitId: mutfakId,
+      onaylandiMi: onayVer,
+      ekDetay: {
+        hedefTipi: 'mutfak_asci',
+        mutfakAdi: hedef?.ad || '',
+        aksiyon: onayVer ? 'hesap_onaylandi' : 'hesap_reddedildi',
+      },
+    });
   };
 
   const filtrelenmisMutfaklar = mutfakListesi.filter(m => {
