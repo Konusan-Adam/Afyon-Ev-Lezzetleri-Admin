@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ShieldCheck,
   BarChart3,
@@ -40,21 +40,9 @@ import { YonetimMusteriBirlesik } from './YonetimMusteriBirlesik';
 import { YonetimSistemBirlesik } from './YonetimSistemBirlesik';
 import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/YonetimLezzetDanismani';
 import { HukukVeZamanDamgasiMasasi } from './HukukiDelilMerkezi/HukukVeZamanDamgasiMasasi';
+import { MobilPatronAltMenu, type MobilAnaSekmeKimligi } from './MobilPatronAltMenu';
 
-type YonetimSekmesi =
-  | 'mutfaklar'
-  | 'mutfak_afisleri'
-  | 'siparisler'
-  | 'kuryeler'
-  | 'yemekler'
-  | 'fatura'
-  | 'komisyonlar'
-  | 'ozet'
-  | 'gel_al_subeleri'
-  | 'musteriler'
-  | 'hukuki_delil'
-  | 'sistem_ayarlari'
-  | 'lezzet_danismani';
+type YonetimSekmesi = MobilAnaSekmeKimligi;
 
 export const YonetimPaneli: React.FC = () => {
   const { cikisYap, panelDegistir } = kullaniciHafizasiKullan();
@@ -70,6 +58,53 @@ export const YonetimPaneli: React.FC = () => {
   const [mutfakYonlendirme, setMutfakYonlendirme] = useState<MutfakYonlendirmeBilgisi | null>(null);
   const [menuYonlendirme, setMenuYonlendirme] = useState<MenuYonlendirmeBilgisi | null>(null);
   const { okunmamisSayisi: okunmamisBildirimSayisi } = usePatronBildirimleri();
+  const [altMenuGorunur, setAltMenuGorunur] = useState(true);
+  const sagIcerikRef = useRef<HTMLDivElement | null>(null);
+  const sonKaydirmaKonumuRef = useRef<number>(0);
+
+  const kaydirmaYonunuGuncelle = useCallback((yeniKonum: number) => {
+    const onceki = sonKaydirmaKonumuRef.current;
+    const fark = yeniKonum - onceki;
+
+    if (yeniKonum <= 48) {
+      setAltMenuGorunur(true);
+      sonKaydirmaKonumuRef.current = yeniKonum;
+      return;
+    }
+
+    if (Math.abs(fark) < 8) return;
+
+    if (fark > 0 && yeniKonum > 64) {
+      setAltMenuGorunur(false);
+    } else if (fark < 0) {
+      setAltMenuGorunur(true);
+    }
+
+    sonKaydirmaKonumuRef.current = yeniKonum;
+  }, []);
+
+  useEffect(() => {
+    const pencereKaydirildi = () => {
+      kaydirmaYonunuGuncelle(window.scrollY || document.documentElement.scrollTop || 0);
+    };
+    window.addEventListener('scroll', pencereKaydirildi, { passive: true });
+    return () => window.removeEventListener('scroll', pencereKaydirildi);
+  }, [kaydirmaYonunuGuncelle]);
+
+  useEffect(() => {
+    setAltMenuGorunur(true);
+    sonKaydirmaKonumuRef.current = 0;
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    if (sagIcerikRef.current) {
+      sagIcerikRef.current.scrollTop = 0;
+    }
+  }, [aktifSekme]);
+
+  useEffect(() => {
+    if (mobilMenuAcik) {
+      setAltMenuGorunur(true);
+    }
+  }, [mobilMenuAcik]);
 
   const bildirimSekmesineGit = (sekme: string, hedef?: BildirimYonlendirmeHedefi) => {
     setAktifSekme(sekme as YonetimSekmesi);
@@ -150,23 +185,23 @@ export const YonetimPaneli: React.FC = () => {
     <div className="w-full min-h-screen bg-[#0C020E] text-gray-200 flex flex-col lg:flex-row select-none">
       
       {/* Mobil Üst Bar */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-[#180A1F] border-b border-[#3E1646] sticky top-0 z-50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FFB703] to-[#8C1D9C] flex items-center justify-center text-white shadow-md">
+      <div className="lg:hidden flex items-center justify-between px-4 py-2.5 bg-[#180A1F]/95 backdrop-blur-md border-b border-[#3E1646] sticky top-0 z-50">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FFB703] to-[#8C1D9C] flex items-center justify-center text-white shadow-md shrink-0">
             <ShieldCheck className="w-5 h-5" />
           </div>
-          <div>
-            <div className="text-white font-bold text-xs">PATRON MASASI</div>
-            <div className="text-[10px] text-amber-300 font-medium">Süper Admin</div>
+          <div className="min-w-0">
+            <div className="text-white font-bold text-xs truncate">PATRON MASASI</div>
+            <div className="text-[10px] text-amber-300 font-medium truncate">Süper Admin</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 relative">
+        <div className="flex items-center gap-2 relative shrink-0">
           {/* Mobil & Tablet Bildirim Çanı */}
           <button
             type="button"
             onClick={() => setBildirimKutusuAcik(!bildirimKutusuAcik)}
-            className="relative p-2 rounded-xl bg-purple-900/40 hover:bg-purple-900/70 text-amber-300 border border-purple-800 cursor-pointer flex items-center justify-center active:scale-95"
+            className="relative min-w-[40px] min-h-[40px] p-2 rounded-xl bg-purple-900/40 hover:bg-purple-900/70 text-amber-300 border border-purple-800 cursor-pointer flex items-center justify-center active:scale-95"
             title="Patron Canlı Bildirimleri"
           >
             <Bell className="w-4 h-4" />
@@ -189,7 +224,7 @@ export const YonetimPaneli: React.FC = () => {
               cikisYap();
               panelDegistir('vitrin');
             }}
-            className="px-2.5 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800/50 text-rose-300 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors"
+            className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800/50 text-rose-300 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors whitespace-nowrap"
           >
             <LogOut className="w-4 h-4" />
             <span className="text-[11px]">Çıkış</span>
@@ -197,16 +232,19 @@ export const YonetimPaneli: React.FC = () => {
           <button
             type="button"
             onClick={() => setMobilMenuAcik(!mobilMenuAcik)}
-            className="p-2 rounded-xl bg-purple-900/40 text-amber-300 border border-purple-800 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] p-2 rounded-xl bg-purple-900/40 text-amber-300 border border-purple-800 cursor-pointer flex items-center justify-center"
+            aria-label={mobilMenuAcik ? 'Menüyü Kapat' : 'Menüyü Aç'}
           >
             {mobilMenuAcik ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Kenar Çubuğu (Sidebar) */}
-      <aside className={`w-full lg:w-72 bg-[#14061A] border-r border-[#34113B] flex flex-col justify-between p-4 lg:p-6 shrink-0 ${
-        mobilMenuAcik ? 'block' : 'hidden lg:flex'
+      {/* Kenar Çubuğu (Sidebar - Mobilde tam ekran üstü kaydırılabilir çekmece, masaüstünde sabit sol panel) */}
+      <aside className={`w-full lg:w-72 bg-[#14061A] border-r border-[#34113B] flex-col justify-between p-4 lg:p-6 shrink-0 ${
+        mobilMenuAcik
+          ? 'flex fixed inset-x-0 top-[61px] bottom-0 z-40 overflow-y-auto pb-24 lg:static lg:inset-auto lg:bottom-auto lg:z-auto lg:overflow-visible lg:pb-6'
+          : 'hidden lg:flex'
       }`}>
         <div className="space-y-6">
           {/* Logo / Başlık */}
@@ -284,7 +322,11 @@ export const YonetimPaneli: React.FC = () => {
       </aside>
 
       {/* 👉 SAĞ İÇERİK ALANI */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
+      <div
+        ref={sagIcerikRef}
+        onScroll={(e) => kaydirmaYonunuGuncelle(e.currentTarget.scrollTop)}
+        className="flex-1 flex flex-col min-h-screen lg:overflow-y-auto"
+      >
         <header className="hidden lg:flex items-center justify-between px-8 py-5 bg-[#14061A]/80 backdrop-blur-md border-b border-[#34113B] sticky top-0 z-30">
           <div>
             <h1 className="text-white font-extrabold text-lg">{baslikGetir()}</h1>
@@ -317,8 +359,13 @@ export const YonetimPaneli: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8">
-          {aktifSekme === 'mutfaklar' && <YonetimMutfaklar mutfakYonlendirme={mutfakYonlendirme} />}
+        <main className="flex-1 p-3.5 sm:p-4 pb-24 lg:p-8">
+          {aktifSekme === 'mutfaklar' && (
+            <YonetimMutfaklar
+              mutfakYonlendirme={mutfakYonlendirme}
+              mobilBarlarGorunur={altMenuGorunur || mobilMenuAcik}
+            />
+          )}
           {aktifSekme === 'mutfak_afisleri' && <YonetimMutfakAfisleri />}
           {aktifSekme === 'siparisler' && <YonetimSiparisBirlesik />}
           {aktifSekme === 'kuryeler' && <YonetimKuryeBirlesik />}
@@ -333,6 +380,20 @@ export const YonetimPaneli: React.FC = () => {
           {aktifSekme === 'lezzet_danismani' && <YonetimLezzetDanismani />}
         </main>
       </div>
+
+      {/* Mobil Alt Menü (Aşağı kaydırırken gizlenir, yukarı çıkarken açılır) */}
+      <MobilPatronAltMenu
+        aktifSekme={aktifSekme}
+        gorunurMu={altMenuGorunur || mobilMenuAcik}
+        tumMenuAcikMi={mobilMenuAcik}
+        bekleyenHakedisSayisi={bekleyenHakedisSayisi}
+        bekleyenCokluMenuSayisi={bekleyenCokluMenuSayisi}
+        onSekmeSec={(sekme) => {
+          setAktifSekme(sekme);
+          setMobilMenuAcik(false);
+        }}
+        onTumMenuDegistir={() => setMobilMenuAcik((onceki) => !onceki)}
+      />
 
     </div>
   );

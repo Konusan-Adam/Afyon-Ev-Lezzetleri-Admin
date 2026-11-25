@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Store, 
-  Star, 
-  MapPin, 
-  Search, 
-  ShieldCheck, 
-  Award, 
-  CheckCircle2, 
-  AlertTriangle, 
-  FileText,
+import {
+  Store,
+  Search,
+  ShieldCheck,
+  Award,
   FileCheck2,
-  Clock,
-  Eye,
-  Check,
   X,
   Plus,
-  Trash2,
-  Edit3,
   Wallet,
   Building,
   Megaphone
@@ -26,6 +16,12 @@ import { useCanliMutfakAfisleri } from '@/src/MalzemeCekmeceleri/useCanliMutfakA
 import { RESMI_MUTFAK_LOGOSU } from '@/src/MalzemeCekmeceleri/Mutfak/resmiMutfakLogosu';
 import { HakedisYonetimMerkezi } from './HakedisYonetimi/HakedisYonetimMerkezi';
 import { YonetimMutfakAfisleri } from './YonetimMutfaklar/YonetimMutfakAfisleri';
+import { MutfakYonetimKarti } from './YonetimMutfaklar/MutfakYonetimKarti';
+import {
+  MobilMutfakAracCubugu,
+  type MutfakAltSekme,
+  type MutfakFiltreDurumu,
+} from './YonetimMutfaklar/MobilMutfakAracCubugu';
 import { Mutfak } from '@/src/veritabani/VeriTipleri';
 import { canliFirebaseAktifMi } from '@/src/veritabani/FirebaseIstemcisi';
 import { koleksiyonGetir, belgeKaydet, belgeSil } from '@/src/veritabani/FirebaseKoleksiyonServisi';
@@ -38,13 +34,17 @@ export interface MutfakYonlendirmeBilgisi {
 
 interface YonetimMutfaklarProps {
   mutfakYonlendirme?: MutfakYonlendirmeBilgisi | null;
+  mobilBarlarGorunur?: boolean;
 }
 
-export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlendirme }) => {
+export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({
+  mutfakYonlendirme,
+  mobilBarlarGorunur = true,
+}) => {
   const { talepler } = useCanliHakedisTalepleri();
   const { bekleyenSayisi: bekleyenAfisSayisi } = useCanliMutfakAfisleri();
   // İç sekme: 'ev_mutfaklari' | 'ticari_mutfaklar' | 'mutfak_afisleri' | 'hakedisler_odemeler'
-  const [altSekme, setAltSekme] = useState<'ev_mutfaklari' | 'ticari_mutfaklar' | 'mutfak_afisleri' | 'hakedisler_odemeler'>('ev_mutfaklari');
+  const [altSekme, setAltSekme] = useState<MutfakAltSekme>('ev_mutfaklari');
 
   useEffect(() => {
     if (mutfakYonlendirme?.altSekme) {
@@ -54,7 +54,7 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
 
   const [mutfakListesi, setMutfakListesi] = useState<Mutfak[]>([]);
   const [arama, setArama] = useState('');
-  const [filtre, setFiltre] = useState<'hepsi' | 'onayli' | 'belge_bekleyen' | 'askida'>('hepsi');
+  const [filtre, setFiltre] = useState<MutfakFiltreDurumu>('hepsi');
   const [seciliMutfakBelge, setSeciliMutfakBelge] = useState<Mutfak | null>(null);
   const [yeniMutfakModalAcik, setYeniMutfakModalAcik] = useState(false);
 
@@ -426,58 +426,81 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
     return true;
   });
 
+  const bekleyenHakedisSayisi = talepler.filter(t => t.durum === 'beklemede').length;
+
   return (
-    <div className="space-y-6 animate-fadeIn">
-      
-      {/* 🌟 ÜST BAŞLIK & ANA SEKME GEÇİŞLERİ */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-[#180A1F] border border-[#3E1646]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-            <Store className="w-6 h-6" />
+    <div className="space-y-4 lg:space-y-6 animate-fadeIn">
+
+      {/* 📱 MOBİL AÇILIR/KAPANIR & KAYDIRMAYA DUYARLI ARAÇ ÇUBUĞU */}
+      <MobilMutfakAracCubugu
+        altSekme={altSekme}
+        onAltSekmeSec={setAltSekme}
+        filtre={filtre}
+        onFiltreSec={setFiltre}
+        arama={arama}
+        onAramaDegistir={setArama}
+        mutfakSayisi={mutfakListesi.length}
+        bekleyenAfisSayisi={bekleyenAfisSayisi}
+        bekleyenHakedisSayisi={bekleyenHakedisSayisi}
+        gorunurMu={mobilBarlarGorunur}
+        onYeniMutfakAc={() => setYeniMutfakModalAcik(true)}
+      />
+
+      {/* 🌟 ÜST BAŞLIK & ANA SEKME GEÇİŞLERİ (Masaüstü) */}
+      <div className="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 rounded-2xl bg-[#180A1F] border border-[#3E1646]">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+            <Store className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <h2 className="text-lg font-extrabold text-white">Mutfak Yönetimi</h2>
-            <p className="text-xs text-purple-300">Ev mutfakları, ticari lokantalar, yasal belgeler, askıya alma ve hakediş ödemeleri tek merkezde.</p>
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-extrabold text-white">Mutfak Yönetimi</h2>
+            <p className="text-xs text-purple-300 leading-relaxed">
+              Ev mutfakları, ticari lokantalar, yasal belgeler, askıya alma ve hakediş ödemeleri tek merkezde.
+            </p>
           </div>
         </div>
 
         {/* Sekme Butonları */}
-        <div className="flex items-center bg-[#120614] p-1.5 rounded-xl border border-purple-900/60 text-xs font-bold gap-1 w-full md:w-auto flex-wrap">
+        <div className="flex items-center bg-[#120614] p-1.5 rounded-xl border border-purple-900/60 text-xs font-bold gap-1.5 w-full xl:w-auto overflow-x-auto no-scrollbar md:flex-wrap">
           <button
+            type="button"
             onClick={() => setAltSekme('ev_mutfaklari')}
-            className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[38px] px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               altSekme === 'ev_mutfaklari' ? 'bg-[#7B258B] text-white shadow-md' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Store className="w-3.5 h-3.5" />
+            <Store className="w-3.5 h-3.5 shrink-0" />
             <span>Ev Mutfakları ({mutfakListesi.length})</span>
           </button>
           <button
+            type="button"
             onClick={() => setAltSekme('ticari_mutfaklar')}
-            className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[38px] px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               altSekme === 'ticari_mutfaklar' ? 'bg-[#7B258B] text-white shadow-md' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Building className="w-3.5 h-3.5" />
+            <Building className="w-3.5 h-3.5 shrink-0" />
             <span>Ticari Mutfaklar</span>
           </button>
           <button
+            type="button"
             onClick={() => setAltSekme('mutfak_afisleri')}
-            className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[38px] px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               altSekme === 'mutfak_afisleri' ? 'bg-[#7B258B] text-white shadow-md' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Megaphone className="w-3.5 h-3.5" />
+            <Megaphone className="w-3.5 h-3.5 shrink-0" />
             <span>Mutfak Afişleri & Vitrin ({bekleyenAfisSayisi})</span>
           </button>
           <button
+            type="button"
             onClick={() => setAltSekme('hakedisler_odemeler')}
-            className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[38px] px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               altSekme === 'hakedisler_odemeler' ? 'bg-amber-600 text-gray-950 font-black shadow-md' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Wallet className="w-3.5 h-3.5" />
-            <span>Hakediş & Ödemeler ({talepler.filter(t => t.durum === 'beklemede').length})</span>
+            <Wallet className="w-3.5 h-3.5 shrink-0" />
+            <span>Hakediş & Ödemeler ({bekleyenHakedisSayisi})</span>
           </button>
         </div>
       </div>
@@ -488,37 +511,41 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
       {altSekme !== 'hakedisler_odemeler' && altSekme !== 'mutfak_afisleri' && (
         <div className="space-y-4">
           
-          {/* Arama & Ekleme Barı */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-[#180A1F] border border-[#3E1646]">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="flex items-center bg-[#240C28] p-1 rounded-xl border border-[#3E1646] text-[11px] font-bold">
+          {/* Arama & Ekleme Barı (Masaüstü) */}
+          <div className="hidden lg:flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-4 rounded-2xl bg-[#180A1F] border border-[#3E1646]">
+            <div className="w-full lg:w-auto overflow-x-auto no-scrollbar">
+              <div className="inline-flex items-center bg-[#240C28] p-1 rounded-xl border border-[#3E1646] text-[11px] font-bold gap-1 whitespace-nowrap">
                 <button
+                  type="button"
                   onClick={() => setFiltre('hepsi')}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`min-h-[34px] px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     filtre === 'hepsi' ? 'bg-[#7B258B] text-white' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   Tümü
                 </button>
                 <button
+                  type="button"
                   onClick={() => setFiltre('onayli')}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`min-h-[34px] px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     filtre === 'onayli' ? 'bg-emerald-800 text-white' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   ✓ Tam Belgeli
                 </button>
                 <button
+                  type="button"
                   onClick={() => setFiltre('belge_bekleyen')}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`min-h-[34px] px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     filtre === 'belge_bekleyen' ? 'bg-amber-600 text-gray-950 font-black' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   ⚠️ Belge Bekleyen
                 </button>
                 <button
+                  type="button"
                   onClick={() => setFiltre('askida')}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`min-h-[34px] px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     filtre === 'askida' ? 'bg-rose-700 text-white' : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -527,23 +554,23 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
               </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative w-full sm:w-56">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+              <div className="relative w-full sm:w-60">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={arama}
                   onChange={(e) => setArama(e.target.value)}
                   placeholder="Mutfak veya mahalle ara..."
-                  className="w-full bg-[#120614] border border-purple-900/60 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
+                  className="w-full min-h-[40px] bg-[#120614] border border-purple-900/60 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setYeniMutfakModalAcik(true)}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-[#130713] font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:brightness-110 shadow-md shrink-0"
+                className="min-h-[40px] px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-[#130713] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:brightness-110 shadow-md whitespace-nowrap shrink-0"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 shrink-0" />
                 <span>Yeni Mutfak Ekle</span>
               </button>
             </div>
@@ -551,148 +578,18 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({ mutfakYonlen
 
           {/* Mutfaklar Grid Listesi */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filtrelenmisMutfaklar.map((mutfak) => {
-              const tamBelgeli = mutfak.hijyen_onayli_mi && mutfak.esnaf_muafiyet_onayli_mi;
-              const askidaMi = (mutfak as any).askida_mi;
-
-              return (
-                <div 
-                  key={mutfak.id}
-                  className={`p-4 rounded-2xl bg-[#180A1F] border transition-all flex flex-col justify-between gap-3 ${
-                    askidaMi
-                      ? 'border-rose-900/80 bg-[#24090D]'
-                      : tamBelgeli 
-                      ? 'border-[#3E1646] hover:border-amber-500/40' 
-                      : 'border-amber-500/50 bg-[#210926]'
-                  }`}
-                >
-                  <div className="flex gap-3.5 items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <img 
-                        src={RESMI_MUTFAK_LOGOSU} 
-                        alt={mutfak.ad} 
-                        className="w-14 h-14 rounded-xl object-cover border border-amber-500/40 shrink-0 bg-[#1D0A20]" 
-                      />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-white text-xs sm:text-sm">{mutfak.ad}</h4>
-                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[10px] font-bold border border-amber-500/20">
-                            <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                            <span>{mutfak.puan}</span>
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-purple-300/80 flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3 text-amber-400" />
-                          <span>{mutfak.adres}</span>
-                        </p>
-                        <div className="text-[10px] text-gray-400 mt-1">
-                          Min: {mutfak.min_siparis_tutari} ₺ • Komisyon: %10
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sağ Üst: Belge İncele, Askıya Al, Sil */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setSeciliMutfakBelge(mutfak)}
-                          className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 border border-purple-700 text-purple-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                        >
-                          <Eye className="w-3 h-3 text-amber-400" />
-                          <span>Belgeler</span>
-                        </button>
-                        <button
-                          onClick={() => askiyaAlDegistir(mutfak.id)}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${
-                            askidaMi
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900'
-                              : 'bg-amber-950 text-amber-300 border border-amber-800 hover:bg-amber-900'
-                          }`}
-                          title="Mutfağı Askıya Al veya Aktif Et"
-                        >
-                          {askidaMi ? 'Aktif Et' : 'Askıya Al'}
-                        </button>
-                        <button
-                          onClick={() => mutfakSil(mutfak.id)}
-                          className="p-1.5 rounded-lg bg-rose-950/60 border border-rose-900 text-rose-300 hover:bg-rose-900 cursor-pointer"
-                          title="Mutfağı Sil"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black border uppercase tracking-wider ${
-                        askidaMi
-                          ? 'bg-rose-950 text-rose-300 border-rose-700'
-                          : mutfak.onayli_mi === true || mutfak.onay_durumu === 'onaylandi'
-                          ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700' 
-                          : 'bg-amber-950/80 text-amber-300 border-amber-600'
-                      }`}>
-                        {askidaMi ? '🔒 Askıya Alındı' : mutfak.onayli_mi === true || mutfak.onay_durumu === 'onaylandi' ? '✓ Yasal Onaylı' : '⏳ Onay Bekliyor'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 👑 PATRON ONAY / RED EYLEM BARı */}
-                  {(mutfak.onay_durumu === 'beklemede' || mutfak.onayli_mi === false) && !askidaMi && (
-                    <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs">
-                      <span className="text-[11px] font-bold text-amber-300">Mutfak Başvurusu:</span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => mutfakOnayla(mutfak.id, true)}
-                          className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Mutfağı Onayla</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => mutfakOnayla(mutfak.id, false)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-900/80 hover:bg-rose-800 text-rose-200 font-bold text-[11px] flex items-center gap-1 cursor-pointer active:scale-95"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                          <span>Reddet</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Alt Belge & Durum Barı */}
-                  <div className="pt-2 border-t border-purple-950/60 flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-400 text-[10px]">Hijyen:</span>
-                      <button
-                        onClick={() => hijyenDurumDegistir(mutfak.id)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-                          mutfak.hijyen_onayli_mi
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                            : 'bg-rose-950 text-rose-300 border border-rose-800'
-                        }`}
-                      >
-                        {mutfak.hijyen_onayli_mi ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                        <span>{mutfak.hijyen_onayli_mi ? 'MEB Onaylı' : 'Eksik'}</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-400 text-[10px]">Vergi Muafiyet:</span>
-                      <button
-                        onClick={() => muafiyetDurumDegistir(mutfak.id)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-                          mutfak.esnaf_muafiyet_onayli_mi
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                            : 'bg-amber-950 text-amber-300 border border-amber-700'
-                        }`}
-                      >
-                        {mutfak.esnaf_muafiyet_onayli_mi ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        <span>{mutfak.esnaf_muafiyet_onayli_mi ? 'GVK 9/10 Onaylı' : 'Bekliyor'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {filtrelenmisMutfaklar.map((mutfak) => (
+              <MutfakYonetimKarti
+                key={mutfak.id}
+                mutfak={mutfak}
+                onBelgeAc={setSeciliMutfakBelge}
+                onAskiyaAlDegistir={askiyaAlDegistir}
+                onMutfakSil={mutfakSil}
+                onMutfakOnayla={mutfakOnayla}
+                onHijyenDegistir={hijyenDurumDegistir}
+                onMuafiyetDegistir={muafiyetDurumDegistir}
+              />
+            ))}
           </div>
 
         </div>
