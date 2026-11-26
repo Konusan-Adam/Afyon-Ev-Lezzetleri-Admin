@@ -15,13 +15,15 @@ import {
   X,
   RefreshCw,
   Clock,
-  Megaphone
+  Megaphone,
+  Music
 } from 'lucide-react';
 import { 
   usePatronBildirimleri,
   PatronBildirimi,
   masaustuBildirimIzniIste
 } from '@/src/MalzemeCekmeceleri/PatronBildirimServisi';
+import { ZilSesiSecVeEkleModali } from '../Bilesenler/Android/ZilSesiSecVeEkleModali';
 
 export interface BildirimYonlendirmeHedefi {
   sekme: string;
@@ -49,6 +51,7 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
   onSekmeSec 
 }) => {
   const { bildirimler, okunduIsaretle, tekOkunduIsaretle, bildirimSil: hookBildirimSil, zilSesiCal } = usePatronBildirimleri();
+  const [zilModaliAcik, setZilModaliAcik] = React.useState(false);
   const [izinDurumu, setIzinDurumu] = React.useState<NotificationPermission | 'desteklenmiyor'>(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission;
@@ -56,7 +59,7 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
     return 'desteklenmiyor';
   });
 
-  if (!acikMi) return null;
+  if (!acikMi && !zilModaliAcik) return null;
 
   const izinVerVeTestEt = async () => {
     const onaylandi = await masaustuBildirimIzniIste();
@@ -218,6 +221,17 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Zil Sesi Seç & Ekle */}
+          <button
+            type="button"
+            onClick={() => setZilModaliAcik(true)}
+            className="text-[10px] font-bold text-amber-300 hover:text-white bg-purple-950/70 hover:bg-purple-900 px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+            title="Zil Sesi Seç & Ekle"
+          >
+            <Music className="w-3 h-3 text-amber-400" />
+            <span>Zil Seç</span>
+          </button>
+
           {/* Zil Testi Butonu */}
           <button
             type="button"
@@ -310,6 +324,11 @@ export const PatronBildirimKutusu: React.FC<PatronBildirimKutusuProps> = ({
           ))
         )}
       </div>
+
+      <ZilSesiSecVeEkleModali
+        acikMi={zilModaliAcik}
+        onKapat={() => setZilModaliAcik(false)}
+      />
     </div>
   );
 };

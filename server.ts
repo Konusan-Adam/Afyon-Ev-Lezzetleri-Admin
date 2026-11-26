@@ -4,6 +4,7 @@ import arsivSunucu from './src/SunucuIsleri/ArsivSunucu';
 import yapayZekaSunucu from './src/SunucuIsleri/YapayZekaSunucu';
 import paytrSunucu from './src/SunucuIsleri/PaytrSunucu';
 import zamanDamgasiSunucu from './src/SunucuIsleri/ZamanDamgasiSunucu';
+import apkIndirmeSunucu from './src/SunucuIsleri/ApkIndirmeSunucu';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api', arsivSunucu);
 app.use('/api', yapayZekaSunucu);
 app.use('/api', paytrSunucu);
 app.use('/api', zamanDamgasiSunucu);
+app.use('/api', apkIndirmeSunucu);
 
 // Vite middleware entegrasyonu (dev ortamı) ve statik dosya sunumu (prodüksiyon ortamı)
 if (process.env.NODE_ENV !== 'production') {

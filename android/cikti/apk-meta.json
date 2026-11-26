@@ -1,0 +1,25 @@
+{
+  "rol": "admin",
+  "paketKimligi": "com.afyonevlezzetleri.admin",
+  "uygulamaAdi": "Afyon Patron",
+  "apkDosyaAdi": "afyon-admin.apk",
+  "surumKodu": 1,
+  "surumAdi": "1.0.0",
+  "minSdk": 24,
+  "targetSdk": 34,
+  "boyutByte": 4404932,
+  "boyutMb": 4.2,
+  "sha256": "cadad9fb0cc7b4978afb81ef7a545ec7bb499768f1a0a56517472e7aacf32046",
+  "imzaliMi": true,
+  "imzaYontemleri": [
+    "JAR v1",
+    "APK Signature Scheme v2",
+    "APK Signature Scheme v3"
+  ],
+  "imzaBlokBoyutu": 3218,
+  "derlemeModu": "sablon-uretim",
+  "webDosyaSayisi": 22,
+  "gomuluApkSayisi": 0,
+  "indirmeYolu": "/api/apk/indir/afyon-admin.apk",
+  "olusturmaTarihi": "2026-11-26T18:39:31.922Z"
+}

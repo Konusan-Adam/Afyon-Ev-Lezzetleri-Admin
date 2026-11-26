@@ -7,6 +7,7 @@ import {
 import { mevcutUrlPaneliniBul, urlVeBasligiGuncelle } from '@/src/GirisKapisi/RotaYardimcisi';
 import { yonetimYetkisiVarMi } from '@/src/MalzemeCekmeceleri/Kimlik/kullaniciAnahtarYardimcisi';
 import { superAdminHesabiniSenkronizeEt } from '@/src/MalzemeCekmeceleri/Kimlik/superAdminSenkronizasyonu';
+import { androidOturumunuSenkronizeEt } from '@/src/MalzemeCekmeceleri/Android/AndroidKopruServisi';
 
 export type PanelTipi = 'vitrin' | 'patron' | 'musteri' | 'mutfak' | 'kurye';
 
@@ -77,12 +78,14 @@ export const KullaniciSaglayici: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
-  // Oturum değiştikçe localStorage güncelle
+  // Oturum değiştikçe localStorage ve Android arka plan servisini güncelle
   useEffect(() => {
     if (aktifKullanici) {
       localStorage.setItem('afyon_oturum_kullanici', JSON.stringify(aktifKullanici));
+      androidOturumunuSenkronizeEt(aktifKullanici);
     } else {
       localStorage.removeItem('afyon_oturum_kullanici');
+      androidOturumunuSenkronizeEt(null);
     }
   }, [aktifKullanici]);
 

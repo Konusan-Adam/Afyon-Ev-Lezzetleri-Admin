@@ -35,11 +35,13 @@ export interface MutfakYonlendirmeBilgisi {
 interface YonetimMutfaklarProps {
   mutfakYonlendirme?: MutfakYonlendirmeBilgisi | null;
   mobilBarlarGorunur?: boolean;
+  sayfaAsagidaMi?: boolean;
 }
 
 export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({
   mutfakYonlendirme,
   mobilBarlarGorunur = true,
+  sayfaAsagidaMi = false,
 }) => {
   const { talepler } = useCanliHakedisTalepleri();
   const { bekleyenSayisi: bekleyenAfisSayisi } = useCanliMutfakAfisleri();
@@ -443,6 +445,7 @@ export const YonetimMutfaklar: React.FC<YonetimMutfaklarProps> = ({
         bekleyenAfisSayisi={bekleyenAfisSayisi}
         bekleyenHakedisSayisi={bekleyenHakedisSayisi}
         gorunurMu={mobilBarlarGorunur}
+        sayfaAsagidaMi={sayfaAsagidaMi}
         onYeniMutfakAc={() => setYeniMutfakModalAcik(true)}
       />
 

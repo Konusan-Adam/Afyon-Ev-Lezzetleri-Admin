@@ -1,0 +1,31 @@
+{
+  "aktifRol": "admin",
+  "surumKodu": 1,
+  "surumAdi": "1.0.0",
+  "minSdk": 24,
+  "targetSdk": 34,
+  "firebase": {
+    "projeId": "tfy-smart-fishing-511521",
+    "veritabaniId": "ai-studio-afyonevlezzetler-373e291d-b34e-4126-ac5e-613533550d71"
+  },
+  "roller": {
+    "kurye": {
+      "paketKimligi": "com.afyonevlezzetleri.kurye",
+      "uygulamaAdi": "Afyon Kurye",
+      "apkDosyaAdi": "afyon-kurye.apk",
+      "konumIzniGerekliMi": true
+    },
+    "sube": {
+      "paketKimligi": "com.afyonevlezzetleri.sube",
+      "uygulamaAdi": "Afyon Şube",
+      "apkDosyaAdi": "afyon-sube.apk",
+      "konumIzniGerekliMi": false
+    },
+    "admin": {
+      "paketKimligi": "com.afyonevlezzetleri.admin",
+      "uygulamaAdi": "Afyon Patron",
+      "apkDosyaAdi": "afyon-admin.apk",
+      "konumIzniGerekliMi": false
+    }
+  }
+}

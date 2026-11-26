@@ -41,6 +41,7 @@ import { YonetimSistemBirlesik } from './YonetimSistemBirlesik';
 import { YonetimLezzetDanismani } from '../Bilesenler/YapayZekaDanismani/YonetimLezzetDanismani';
 import { HukukVeZamanDamgasiMasasi } from './HukukiDelilMerkezi/HukukVeZamanDamgasiMasasi';
 import { MobilPatronAltMenu, type MobilAnaSekmeKimligi } from './MobilPatronAltMenu';
+import { ApkGuncellemeUyarisi } from '../Bilesenler/Android/ApkGuncellemeUyarisi';
 
 type YonetimSekmesi = MobilAnaSekmeKimligi;
 
@@ -59,12 +60,15 @@ export const YonetimPaneli: React.FC = () => {
   const [menuYonlendirme, setMenuYonlendirme] = useState<MenuYonlendirmeBilgisi | null>(null);
   const { okunmamisSayisi: okunmamisBildirimSayisi } = usePatronBildirimleri();
   const [altMenuGorunur, setAltMenuGorunur] = useState(true);
+  const [sayfaAsagidaMi, setSayfaAsagidaMi] = useState(false);
   const sagIcerikRef = useRef<HTMLDivElement | null>(null);
   const sonKaydirmaKonumuRef = useRef<number>(0);
 
   const kaydirmaYonunuGuncelle = useCallback((yeniKonum: number) => {
     const onceki = sonKaydirmaKonumuRef.current;
     const fark = yeniKonum - onceki;
+
+    setSayfaAsagidaMi(yeniKonum > 130);
 
     if (yeniKonum <= 48) {
       setAltMenuGorunur(true);
@@ -93,6 +97,7 @@ export const YonetimPaneli: React.FC = () => {
 
   useEffect(() => {
     setAltMenuGorunur(true);
+    setSayfaAsagidaMi(false);
     sonKaydirmaKonumuRef.current = 0;
     window.scrollTo({ top: 0, behavior: 'auto' });
     if (sagIcerikRef.current) {
@@ -360,10 +365,12 @@ export const YonetimPaneli: React.FC = () => {
         </header>
 
         <main className="flex-1 p-3.5 sm:p-4 pb-24 lg:p-8">
+          <ApkGuncellemeUyarisi />
           {aktifSekme === 'mutfaklar' && (
             <YonetimMutfaklar
               mutfakYonlendirme={mutfakYonlendirme}
               mobilBarlarGorunur={altMenuGorunur || mobilMenuAcik}
+              sayfaAsagidaMi={sayfaAsagidaMi}
             />
           )}
           {aktifSekme === 'mutfak_afisleri' && <YonetimMutfakAfisleri />}

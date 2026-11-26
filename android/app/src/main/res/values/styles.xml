@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AfyonTema" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">#0C020E</item>
+        <item name="android:statusBarColor">#180A1F</item>
+        <item name="android:navigationBarColor">#0C020E</item>
+    </style>
+</resources>

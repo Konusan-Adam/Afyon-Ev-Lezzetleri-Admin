@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Database, ShieldCheck, LayoutTemplate, Megaphone, CreditCard, Wallet } from 'lucide-react';
+import { Database, ShieldCheck, LayoutTemplate, Megaphone, CreditCard, Wallet, Smartphone } from 'lucide-react';
 import { YonetimYedeklemeMerkezi } from './YonetimYedeklemeMerkezi';
 import { SuperAdminHukukPaneli } from '../Bilesenler/HukukVeSozlesmeler/SuperAdminHukukPaneli';
 import { YonetimFooter } from './YonetimFooter';
 import { YonetimReklamBanner } from './YonetimReklamBanner';
 import { YonetimPaytrAyarlari } from './YonetimPaytrAyarlari';
 import { YonetimOdemeSecenekleri } from './YonetimOdemeSecenekleri';
+import { MobilApkVeZilMerkezi } from '../Bilesenler/Android/MobilApkVeZilMerkezi';
 
 export const YonetimSistemBirlesik: React.FC = () => {
-  const [sekme, setSekme] = useState<'yedek' | 'odeme_secenekleri' | 'paytr' | 'reklam' | 'hukuk' | 'footer'>('yedek');
+  const [sekme, setSekme] = useState<'yedek' | 'odeme_secenekleri' | 'paytr' | 'reklam' | 'hukuk' | 'footer' | 'apk_zil'>('yedek');
 
   return (
     <div className="space-y-4">
@@ -16,6 +17,10 @@ export const YonetimSistemBirlesik: React.FC = () => {
         <button type="button" onClick={() => setSekme('yedek')}
           className={`px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer ${sekme === 'yedek' ? 'bg-amber-500 text-purple-950 font-black' : 'text-gray-400 hover:text-white'}`}>
           <Database className="w-3.5 h-3.5" /><span>Veritabanı & Arşiv</span>
+        </button>
+        <button type="button" onClick={() => setSekme('apk_zil')}
+          className={`px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer ${sekme === 'apk_zil' ? 'bg-amber-500 text-purple-950 font-black' : 'text-gray-400 hover:text-white'}`}>
+          <Smartphone className="w-3.5 h-3.5" /><span>Android APK & Zil</span>
         </button>
         <button type="button" onClick={() => setSekme('odeme_secenekleri')}
           className={`px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer ${sekme === 'odeme_secenekleri' ? 'bg-amber-500 text-purple-950 font-black' : 'text-gray-400 hover:text-white'}`}>
@@ -39,6 +44,7 @@ export const YonetimSistemBirlesik: React.FC = () => {
         </button>
       </div>
       {sekme === 'yedek' && <YonetimYedeklemeMerkezi />}
+      {sekme === 'apk_zil' && <MobilApkVeZilMerkezi />}
       {sekme === 'odeme_secenekleri' && <YonetimOdemeSecenekleri />}
       {sekme === 'paytr' && <YonetimPaytrAyarlari />}
       {sekme === 'reklam' && <YonetimReklamBanner />}

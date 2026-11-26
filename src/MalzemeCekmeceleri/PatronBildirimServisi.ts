@@ -56,44 +56,14 @@ if (typeof window !== 'undefined') {
   window.addEventListener('touchstart', sesMotorunuBaslat, { once: false });
 }
 
-// 🔔 Çift Tonlu Canlı Kasa / Bildirim Zili (Ding-Dong)
+import { aktifZilSesiniCal } from './Android/AndroidKopruServisi';
+
+// 🔔 Çift Tonlu Canlı Kasa / Bildirim Zili (Seçilen Melodi / Özel Ses)
 export const patronZilSesiCal = () => {
   if (typeof window === 'undefined') return;
   try {
     sesMotorunuBaslat();
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    const ctx = paylasimliAudioContext || (AudioContextClass ? new AudioContextClass() : null);
-    if (!ctx) return;
-
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
-    const t = ctx.currentTime;
-    
-    // 1. Zil Tonu (C6 - 1046.5 Hz)
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'triangle';
-    osc1.frequency.setValueAtTime(1046.5, t);
-    gain1.gain.setValueAtTime(0.25, t);
-    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(t);
-    osc1.stop(t + 0.35);
-
-    // 2. Zil Tonu (E6 - 1318.5 Hz)
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1318.5, t + 0.12);
-    gain2.gain.setValueAtTime(0.3, t + 0.12);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(t + 0.12);
-    osc2.stop(t + 0.6);
+    aktifZilSesiniCal();
   } catch (err) {
     console.warn('Patron bildirim zil sesi uyarısı:', err);
   }
